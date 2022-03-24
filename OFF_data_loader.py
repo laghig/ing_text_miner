@@ -44,35 +44,56 @@ from pymongo import MongoClient, errors
 DOMAIN = 'localhost' # Note: this should be replaced by the URL of your own container!! 
 PORT = 27017
 
-# use a try-except indentation to catch MongoClient() errors
-try:
-    # try to instantiate a client instance
-    client = MongoClient(DOMAIN, PORT)
+def connect_mongo(host, port):
+    # use a try-except indentation to catch MongoClient() errors
+    try:
+        # try to instantiate a client instance
+        client = MongoClient(DOMAIN, PORT)
 
-    db = client.off
-    
-except errors.ServerSelectionTimeoutError as err:
-    # set the client to 'None' if exception
-    client = None
+        OFF_db = client.off
+        
+    except errors.ServerSelectionTimeoutError as err:
+        # set the client to 'None' if exception
+        client = None
 
-    # catch pymongo.errors.ServerSelectionTimeoutError
-    print ("pymongo ERROR:", err)
+        # catch pymongo.errors.ServerSelectionTimeoutError
+        print ("pymongo ERROR:", err)
 
-db.products
+    return OFF_db
 
-# Count the documents 
-# print(db.products.count_documents({})) # around 2.2 Mio. documents (2'235'098)
-#print(db.products.count_documents({'countries': 'Switzerland'})) # return 7967 entries
+OFF_db = connect_mongo(DOMAIN, PORT)
 
-#print(db.products.count_documents({"countries": {'$regex': 'Switzerland'}})) # return 16107 entries
-#print(db.products.count_documents({"countries": {'$regex': "/%" + 'Switzerland' + "/"}})) # zero entries
+# Count documents
+
+# print(OFF_db.products.count_documents({})) # around 2.2 Mio. documents (2'235'098)
+#print(OFF_db.products.count_documents({'countries': 'Switzerland'})) # return 7967 entries
+#print(OFF_db.products.count_documents({"countries": {'$regex': 'Switzerland'}})) # return 16107 entries
+# print(OFF_db.products.count_documents({ '$or': [ 
+#     {"countries": {'$regex': 'Switzerland'}}, {'contries':{'$regex': 'Suisse'}},
+#     {"countries": {'$regex': 'Schweiz'}}, {'contries':{'$regex': 'Zwitserland'}},
+#     {"countries": {'$regex': 'Svizzera'}}
+#     ]})) # returns 16248 entries
+#print(OFF_db.products.count_documents({"countries_tags": {'$regex': 'switzerland'}})) # returns 47407 entries
 
 # Queries
 
+proj = {
+    'product_name_fr': True,
+    'product_name_de': True,
+    'product_name_en': True,
+    'categories': True,
+    'ingredients_text_de': True,
+    'Ingredients_text_fr': True,
+    'Ingredients_text_en': True,
+    'countries': True,
+    'countries_tags': True,
+    'ecoscore_grade': True,
+}
+
 # Query to find a single document matching the query - if empty returns the first document
-# print(db.products.find_one({'countries': 'Switzerland'}))
+print(OFF_db.products.find_one({'countries': 'Switzerland'}, proj))
 
 # Query for more than one document
 
-# for product in db.products.find({'countries': 'Switzerland'}):
+# for product in OFF_db.products.find({"countries_tags": {'$regex': 'switzerland'}}):
 #     print(product)
