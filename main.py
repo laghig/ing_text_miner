@@ -1,22 +1,18 @@
 import pandas as pd
-import numpy as np
 import datetime as dt
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 from nltk.stem.porter import *
-from pip import main
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.multiclass import OneVsRestClassifier
 # from sklearn.svm import LinearSVC
 from sklearn import metrics
 
 #own imports - switch to importing all methods at once
 from data_handler.Data_loader import *
 from data_cleaning import data_cleaning
+#from visualization.roc_curve import plot_multiclass_roc
 
 """
 Main file in which all the steps of the model are called in a successive order
@@ -28,43 +24,49 @@ if __name__ == "__main__":
     path = r"C:\Users\Giorgio\Desktop\ETH\Code"
     os.chdir(path)
 
-    # Load the configuration file
+    # Load the parameters file
     if os.path.exists("model_params.yml"):
         with open(os.getcwd() +'\model_params.yml') as f:
             params = yaml.load(f, Loader=yaml.FullLoader)
     else:
         print('Parameters file is missing.')
-    
-    # Load data from the Eatfit SQL database
-    df = query_eatfit_db(query='nutri_score_ingr_en')
-    print(df.head())
 
-    # Load data from the OFF mongodb database
+    if params['ReloadData'] is True:
+        # Load data from the Eatfit SQL database
+        df = query_eatfit_db(query='nutri_score_ingr_en')
+        print(df.head())
 
-    # Drop empty values
-    df.dropna(inplace=True)
+        # Load data from the OFF mongodb database
 
-    # Delete other data
-    # df = df[df.text != 'Product information’s are not available in English']
-    df = df[df.text != '-']
+        # Drop empty values
+        df.dropna(inplace=True)
 
-    #check for empty values
-    df = check_for_NaN_values(df)
+        # Delete other data
+        # df = df[df.text != 'Product information’s are not available in English']
+        df = df[df.text != '-']
 
-    # Print a summary of the data
-    text= eatfit_data_summary(df)
-    print(text)
+        #check for empty values
+        df = check_for_NaN_values(df)
 
-    # Clean the ingredient list text
-    cleaned_dt = data_cleaning(df)
-    print(cleaned_dt.head())
+        # Print a summary of the data
+        text= eatfit_data_summary(df)
+        print(text)
+
+        # Clean the ingredient list text
+        cleaned_dt = data_cleaning(df)
+        print(cleaned_dt.head())
+
+        # save interim results as csv file
+        cleaned_dt.to_csv(os.getcwd() +'/interim_results/cleaned_data.csv')
+    else:
+        cleaned_dt = pd.read_csv(os.getcwd() +'/interim_results/cleaned_data.csv')
 
     # ------------------MODEL-------------------------
 
     # Split the data into train & test sets
 
-    X = df['text']
-    y = df['ubp_score']
+    X = cleaned_dt['text']
+    y = cleaned_dt['ubp_score']
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
@@ -109,3 +111,7 @@ if __name__ == "__main__":
     # print(metrics.confusion_matrix(y_test,predictions))
     # print(metrics.classification_report(y_test,predictions))
     # print(metrics.accuracy_score(y_test,predictions))
+
+    # generate the ROC curve
+    # plot_multiclass_roc()
+    # clf = OneVsRestClassifier(RandomForestClassifier()).fit(X, y)
