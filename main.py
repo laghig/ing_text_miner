@@ -53,7 +53,7 @@ if __name__ == "__main__":
         print(text)
 
         # Clean the ingredient list text
-        cleaned_dt = data_cleaning(df)
+        cleaned_dt = data_cleaning(df, params['Language'])
         print(cleaned_dt.head())
 
         # save interim results as csv file
