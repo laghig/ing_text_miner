@@ -1,3 +1,4 @@
 classifier: "RandomForest"
-Language: 'de'
-ReloadData: true
+Language: 'de' # 'en'
+ReloadData: True
+Database: 'Eatfit' # 'OpenFoodFacts'

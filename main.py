@@ -11,6 +11,7 @@ from sklearn import metrics
 
 #own imports - switch to importing all methods at once
 from data_handler.Data_loader import *
+from data_handler.OFF_data_loader import *
 from data_cleaning import data_cleaning
 #from visualization.roc_curve import plot_multiclass_roc
 
@@ -32,11 +33,20 @@ if __name__ == "__main__":
         print('Parameters file is missing.')
 
     if params['ReloadData'] is True:
-        # Load data from the Eatfit SQL database
-        df = query_eatfit_db(query='nutri_score_ingr_en')
-        print(df.head())
 
-        # Load data from the OFF mongodb database
+        if params['Database'] == 'Eatfit':
+            # Load data from the Eatfit SQL database
+            language = params['Language']
+            df = query_eatfit_db_ingr_ubp(language)
+
+        if params['Database'] == 'OpenFoodFacts':
+            # Load data from the OFF mongodb database
+            DOMAIN = 'localhost'
+            PORT = 27017
+            OFF_db = connect_mongo(DOMAIN, PORT)
+
+        print('Data retrieved')
+        print(df.head())
 
         # Drop empty values
         df.dropna(inplace=True)
@@ -108,6 +118,7 @@ if __name__ == "__main__":
             f.write(str(txt))
             f.write('\n')
 
+    print("Completed successfully")
     # print(metrics.confusion_matrix(y_test,predictions))
     # print(metrics.classification_report(y_test,predictions))
     # print(metrics.accuracy_score(y_test,predictions))
