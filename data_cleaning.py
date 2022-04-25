@@ -5,37 +5,106 @@ from nltk.tokenize import word_tokenize
 from nltk.stem.porter import * # porter stemmer was developed for the english language
 from nltk.stem.cistem import * # Cistem seems to be the best stemmer for the german language
 
-def data_cleaning(df, language):
+"""
+Cleaning:
+    clean_dataframe:
+        remove empty values
+        removed standard-filled rows
+    
+    text_cleaning:
+        no punctuation
+        lowercase only
+        remove stop words -> language dependency
+        stemming
+"""
 
-    # Stop words
+def remove_punctuation(text):
+    no_punct = text.translate(str.maketrans('', '', string.punctuation))
+    return no_punct
+
+def remove_stop_words_en(text):
+    # Stop words - standard dictionary
     en_stopwords = stopwords.words('english')
-    de_stopwords = stopwords.words('german')
-    # add few words to the stop words dictionary
+
+    # Ingredients list- specific additions
     en_stopwords.extend(['ingredients'])
+
+    filtered_words = [word for word in text if word not in en_stopwords]
+
+    return filtered_words
+
+def remove_stop_words_de(text):
+    # Stop words - standard dictionary
+    de_stopwords = stopwords.words('german')
+
+    # Ingredients list- specific additions
     de_stopwords.extend(['Zutaten'])
 
-    if language=='en':
-        # Use Porter stemmer
-        stemmer = PorterStemmer()
+    filtered_words = [word for word in text if word not in de_stopwords]
+
+    return filtered_words
+
+def word_stemmer_de(text):
+
+    stemmer = Cistem()
+    words_stem = " ".join([stemmer.stem(word) for word in text])
+
+    return words_stem
+
+def word_stemmer_en(text):
+
+    # Use Porter stemmer
+    stemmer = PorterStemmer()   
+    words_stem = " ".join([stemmer.stem(word) for word in text])
+
+    return words_stem
+
+def clean_dataframe(df, language):
+    # Drop empty values
+    df.dropna(inplace=True)
+
+    # Other deletions:
+    df = df[df.text != '-']
+
+    if language == 'en':
+        df = df[df.text != 'Product information’s are not available in English']
+
+    return df
+
+def text_cleaning(df, language):
     
-    elif language == 'de':
-        # Use Cistem stemmer
-        stemmer = Cistem()
+    # remove punctuation
+    df['text'] = df['text'].apply(lambda x: remove_punctuation(x))
 
-    df1= pd.DataFrame(columns = ['text', 'prod_id', 'ubp_score'])
+    # Tokenization an lower case only
+    df['text']= df['text'].apply(lambda x: word_tokenize(x.lower()))
 
-    for index, row in df.iterrows():
-        ingr_ls = row['text'].translate(str.maketrans('', '', string.punctuation))
-        ingr_ls = word_tokenize(ingr_ls)
-        filtered_words = [word.lower() for word in ingr_ls if word not in de_stopwords if language == 'de' else en_stopwords]
-        ingr_ls_stem = [stemmer.stem(word) for word in filtered_words]
+    # Filter out stop words
+    if language == 'en':
+        df['text']= df['text'].apply(lambda x: remove_stop_words_en(x))
+    
+    if language == 'de':
+        df['text']= df['text'].apply(lambda x: remove_stop_words_de(x))
+    
+    #Stemming
+    if language == 'en':
+        df['text']=df['text'].apply(lambda x: word_stemmer_en(x))
+    
+    if language == 'de':
+        df['text']=df['text'].apply(lambda x: word_stemmer_de(x))
 
-        ingr_clean = [' '.join( ingr for ingr in ingr_ls_stem)]
+    return df
 
-        ingr_clean.append(row['prod_id'])
-        ingr_clean.append(row['ubp_score'])
+if __name__ == "__main__":
+    
+    # TEST
+    random_text = "I love veggies, but I can't imagine to not eat meat - it's just too good! I: ?just try ; to eat^ less of it."
 
-        new_row = pd.Series(ingr_clean, index = df1.columns)
-        df1 = df1.append(new_row, ignore_index=True)
-
-    return df1
+    clean_text = remove_punctuation(random_text)
+    print(clean_text)
+    clean_text=word_tokenize(clean_text.lower())
+    print(clean_text)
+    clean_text=remove_stop_words_en(clean_text)
+    print(clean_text)
+    clean_text=word_stemmer_en(clean_text)
+    print(clean_text)

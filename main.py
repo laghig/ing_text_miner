@@ -12,7 +12,7 @@ from sklearn import metrics
 #own imports - switch to importing all methods at once
 from data_handler.Data_loader import *
 from data_handler.OFF_data_loader import *
-from data_cleaning import data_cleaning
+from data_cleaning import *
 #from visualization.roc_curve import plot_multiclass_roc
 
 """
@@ -24,6 +24,11 @@ if __name__ == "__main__":
     #set the working directory
     path = r"C:\Users\Giorgio\Desktop\ETH\Code"
     os.chdir(path)
+
+    # Define locations
+    saveLoc = '/output/classification_reports/'
+    ReportName = str('classification_report-' + dt.datetime.now().strftime('%Y-%m-%d-%H-%M') + '.txt')
+    class_report_path = saveLoc + ReportName
 
     # Load the parameters file
     if os.path.exists("model_params.yml"):
@@ -48,28 +53,28 @@ if __name__ == "__main__":
         print('Data retrieved')
         print(df.head())
 
-        # Drop empty values
-        df.dropna(inplace=True)
+        # Drop rows without an ingredients list
+        df = clean_dataframe(df, params['Language'])
 
-        # Delete other data
-        # df = df[df.text != 'Product information’s are not available in English']
-        df = df[df.text != '-']
-
-        #check for empty values
-        df = check_for_NaN_values(df)
+        # #check for empty values
+        # df = check_for_NaN_values(df)
 
         # Print a summary of the data
-        text= eatfit_data_summary(df)
-        print(text)
+        # text= eatfit_data_summary(df)
+        # print(text)
 
         # Clean the ingredient list text
-        cleaned_dt = data_cleaning(df, params['Language'])
+        cleaned_dt = text_cleaning(df, params['Language'])
         print(cleaned_dt.head())
 
         # save interim results as csv file
-        cleaned_dt.to_csv(os.getcwd() +'/interim_results/cleaned_data.csv')
+        # cleaned_dt.to_csv(os.getcwd() +'/interim_results/cleaned_data.csv')
+        cleaned_dt.to_pickle(os.getcwd() +'/interim_results/cleaned_data.pkl')
+        # another interesting option would be to_parquet
+
     else:
-        cleaned_dt = pd.read_csv(os.getcwd() +'/interim_results/cleaned_data.csv')
+        cleaned_dt = pd.read_pickle(os.getcwd() +'/interim_results/cleaned_data.pkl')
+        # cleaned_dt = pd.read_csv(os.getcwd() +'/interim_results/cleaned_data.csv')
 
     # ------------------MODEL-------------------------
 
@@ -78,7 +83,7 @@ if __name__ == "__main__":
     X = cleaned_dt['text']
     y = cleaned_dt['ubp_score']
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=params['SplitSize'], random_state=params['RandomState'])
 
     # Build a pipeline, train and fit the model
 
@@ -96,11 +101,15 @@ if __name__ == "__main__":
     # Form a prediction set
     predictions = text_clf.predict(X_test)
 
+    # --------------RESULTS------------------
     # Report the confusion matrix, the classification report, and the  overall accuracy
  
     txt_block = [
-        str("Date:" + dt.datetime.now().strftime('%d/%m/%Y %H:%M')),
-        str("Classifier:" + params['classifier']), '\n',
+        str("Date: " + dt.datetime.now().strftime('%d/%m/%Y %H:%M')),
+        str("Database: " + params['Database']),
+        str("Language: " + params['Language']),
+        str("Classifier:" + params['classifier']),
+        "Split Size: " + str(params['SplitSize']), '\n',
         "CONFUSION MATRIX =",
         metrics.confusion_matrix(y_test,predictions), '\n',
         "CLASSIFICATION REPORT =",
@@ -109,16 +118,13 @@ if __name__ == "__main__":
         metrics.accuracy_score(y_test,predictions), '\n'
      ]
 
-    saveLoc = '/output/classification_reports/'
-    fileName = str('classification_report-' + dt.datetime.now().strftime('%Y-%m-%d-%H-%M') + '.txt')
-    class_report_path = saveLoc + fileName
-
     with open(os.getcwd() + class_report_path, 'w') as f:
         for txt in txt_block:
             f.write(str(txt))
             f.write('\n')
 
     print("Completed successfully")
+    
     # print(metrics.confusion_matrix(y_test,predictions))
     # print(metrics.classification_report(y_test,predictions))
     # print(metrics.accuracy_score(y_test,predictions))

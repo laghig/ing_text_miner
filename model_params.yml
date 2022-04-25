@@ -1,4 +1,9 @@
+# Data
+Database: 'Eatfit' # 'OpenFoodFacts'
+ReloadData: true
+
+# Model parameters
 classifier: "RandomForest"
 Language: 'de' # 'en'
-ReloadData: True
-Database: 'Eatfit' # 'OpenFoodFacts'
+SplitSize: 0.33
+RandomState: 42
