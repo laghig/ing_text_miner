@@ -1,6 +1,6 @@
 # Environmental score predictor for food products
 
-This application uses natural language processing and machine learning to predict the environmental footprint of footproducts based on packaging information.
+This application uses natural language processing and machine learning to predict the environmental footprint of food products based on packaging information.
 
 ## Dependencies
 - MongoDB
