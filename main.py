@@ -31,8 +31,8 @@ if __name__ == "__main__":
     class_report_path = saveLoc + ReportName
 
     # Load the parameters file
-    if os.path.exists("model_params.yml"):
-        with open(os.getcwd() +'\model_params.yml') as f:
+    if os.path.exists("/Build/model_params.yml"):
+        with open(os.getcwd() +'\Build\model_params.yml') as f:
             params = yaml.load(f, Loader=yaml.FullLoader)
     else:
         print('Parameters file is missing.')

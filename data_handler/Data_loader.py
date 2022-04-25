@@ -54,24 +54,13 @@ nutri_score_ingr_en = "SELECT  product.id, a.text, a.lang, product.nutri_score_c
                     WHERE lang = 'en') as a \
                     ON product.id = a.product_id;"
 
-bls_scode_ingr_de = "SELECT  BLS_Code, a.product_id, prod_id, a.text, a.lang \
+bls_score_ingr_de = "SELECT  BLS_Code, a.product_id, prod_id, a.text, a.lang \
                 FROM  nutritiondb.lca_data_zahw \
                 INNER JOIN \
                 (SELECT *  \
                 FROM nutritiondb.ingredient \
                 WHERE lang = 'de') as a \
                 ON lca_data_zahw.prod_id = a.product_id;"
-
-ubp_scre_ingr_de = "SELECT b.product_id, bls_lca.bls_code, ubp_score, lca_description, b.BLS_Code, b.prod_id, b.text, b.lang \
-                FROM bls_lca INNER JOIN \
-                (SELECT  BLS_Code, a.product_id, prod_id, a.text, a.lang \
-                FROM  nutritiondb.bls_matching_prod_zahw \
-                INNER JOIN \
-                (SELECT *  \
-                FROM nutritiondb.ingredient \
-                WHERE lang = 'de') as a \
-                ON bls_matching_prod_zahw.prod_id = a.product_id) as b \
-                ON b.BLS_Code = bls_lca.bls_code; "
 
 
 def connect_eatfit_db(sql_query=string):
@@ -113,13 +102,33 @@ def connect_eatfit_db(sql_query=string):
             connection.close()
             print("MySQL connection is closed")
 
-def query_eatfit_db(query=string):
+def query_eatfit_db_ingr_ubp(language):
+    """
+    Query to fetch a table with the upb score and the ingredients list depending on the specified language
+    Input: language: string
+    Output: df: pandas dataframe
+    """
+    query = "SELECT b.product_id, bls_lca.bls_code, ubp_score, lca_description, b.text, b.lang \
+            FROM bls_lca INNER JOIN \
+            (SELECT  BLS_Code, a.product_id, prod_id, a.text, a.lang \
+            FROM  nutritiondb.bls_matching_prod_zahw \
+            INNER JOIN \
+            (SELECT *  \
+            FROM nutritiondb.ingredient \
+            WHERE lang ='{}') as a \
+            ON bls_matching_prod_zahw.prod_id = a.product_id) as b \
+            ON b.BLS_Code = bls_lca.bls_code;".format(language)
+    
+    df = connect_eatfit_db(query)
+    return df
+
+def query_eatfit_db_ingr_eng(query=string):
     """
     Match the SQL text, query the database, and return a pandas df
     Input: query: variable name of the SQL text
     Output: df: pandas dataframe
     """
-    df = connect_eatfit_db(ubp_scre_ingr_de)
+    df = connect_eatfit_db(query)
     return df
 
 def check_for_NaN_values(df):

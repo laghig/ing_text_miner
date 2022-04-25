@@ -61,43 +61,44 @@ def connect_mongo(host, port):
 
     return OFF_db
 
-OFF_db = connect_mongo(DOMAIN, PORT)
+if __name__ == "__main__":
+    OFF_db = connect_mongo(DOMAIN, PORT)
 
-# Count documents
+    # Count documents
 
-# print(OFF_db.products.count_documents({})) # around 2.2 Mio. documents (2'235'098)
-#print(OFF_db.products.count_documents({'countries': 'Switzerland'})) # return 7967 entries
-#print(OFF_db.products.count_documents({"countries": {'$regex': 'Switzerland'}})) # return 16107 entries
-# print(OFF_db.products.count_documents({ '$or': [ 
-#     {"countries": {'$regex': 'Switzerland'}}, {'countries':{'$regex': 'Suisse'}},
-#     {"countries": {'$regex': 'Schweiz'}}, {'countries':{'$regex': 'Zwitserland'}},
-#     {"countries": {'$regex': 'Svizzera'}}
-#     ]})) # returns 16248 entries
+    # print(OFF_db.products.count_documents({})) # around 2.2 Mio. documents (2'235'098)
+    #print(OFF_db.products.count_documents({'countries': 'Switzerland'})) # return 7967 entries
+    #print(OFF_db.products.count_documents({"countries": {'$regex': 'Switzerland'}})) # return 16107 entries
+    # print(OFF_db.products.count_documents({ '$or': [ 
+    #     {"countries": {'$regex': 'Switzerland'}}, {'countries':{'$regex': 'Suisse'}},
+    #     {"countries": {'$regex': 'Schweiz'}}, {'countries':{'$regex': 'Zwitserland'}},
+    #     {"countries": {'$regex': 'Svizzera'}}
+    #     ]})) # returns 16248 entries
 
-print(OFF_db.products.count_documents({ '$or': [
-    {"countries_tags": {'$regex': 'switzerland'}},
-    {'countries_tags':{'$regex': 'suisse'}},
-]})) # returns 47407 entries
+    print(OFF_db.products.count_documents({ '$or': [
+        {"countries_tags": {'$regex': 'switzerland'}},
+        {'countries_tags':{'$regex': 'suisse'}},
+    ]})) # returns 47407 entries
 
-# Queries
+    # Queries
 
-proj = {
-    'product_name_fr': True,
-    'product_name_de': True,
-    'product_name_en': True,
-    'categories': True,
-    'ingredients_text_de': True,
-    'Ingredients_text_fr': True,
-    'Ingredients_text_en': True,
-    'countries': True,
-    'countries_tags': True,
-    'ecoscore_grade': True,
-}
+    proj = {
+        'product_name_fr': True,
+        'product_name_de': True,
+        'product_name_en': True,
+        'categories': True,
+        'ingredients_text_de': True,
+        'Ingredients_text_fr': True,
+        'Ingredients_text_en': True,
+        'countries': True,
+        'countries_tags': True,
+        'ecoscore_grade': True,
+    }
 
-# Query to find a single document matching the query - if empty returns the first document
-print(OFF_db.products.find_one({'countries': 'Switzerland'}, proj))
+    # Query to find a single document matching the query - if empty returns the first document
+    print(OFF_db.products.find_one({'countries': 'Switzerland'}, proj))
 
-# Query for more than one document
+    # Query for more than one document
 
-# for product in OFF_db.products.find({"countries_tags": {'$regex': 'switzerland'}}):
-#     print(product)
+    # for product in OFF_db.products.find({"countries_tags": {'$regex': 'switzerland'}}):
+    #     print(product)

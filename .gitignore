@@ -1,0 +1,8 @@
+__pycache__/*
+config.yml
+data_handler/__pycache__
+open_food_facts_db/*
+interim_results/*
+output/*
+eco_score/*
+
