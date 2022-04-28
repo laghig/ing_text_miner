@@ -73,10 +73,7 @@ def clean_dataframe(df, language):
 
 def clean_OFF_dataframe(df, language):
     # Drop empty values
-    if language == 'de':
-        df.dropna(subset=['ingredients_text_de', 'ecoscore_grade'],inplace=True)
-    else:
-        df.dropna(subset=['ingredients_text_en', 'ecoscore_grade'],inplace=True)
+    df.dropna(subset=['ingredients_text_{}'.format(language), 'ecoscore_grade'],inplace=True)
     
     # Other deletions
     df = df[df.ecoscore_grade != 'unknown'] 
@@ -91,20 +88,16 @@ def text_cleaning(df, language, column):
     # Tokenization an lower case only
     df[column]= df[column].apply(lambda x: word_tokenize(x.lower()))
 
-    # Filter out stop words
     if language == 'en':
+        # Filter out stop words
         df[column]= df[column].apply(lambda x: remove_stop_words_en(x))
-    
-    if language == 'de':
-        df[column]= df[column].apply(lambda x: remove_stop_words_de(x))
-    
-    #Stemming
-    if language == 'en':
+        #Stemming
         df[column]=df[column].apply(lambda x: word_stemmer_en(x))
     
     if language == 'de':
+        df[column]= df[column].apply(lambda x: remove_stop_words_de(x))
         df[column]=df[column].apply(lambda x: word_stemmer_de(x))
-
+    
     return df
 
 if __name__ == "__main__":
