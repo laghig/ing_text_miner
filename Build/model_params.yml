@@ -1,5 +1,5 @@
 # Data
-Database: 'Eatfit' # 'OpenFoodFacts'
+Database: 'OpenFoodFacts'  # 'OpenFoodFacts' / 'Eatfit'
 ReloadData: true
 
 # Model parameters

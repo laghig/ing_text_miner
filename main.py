@@ -31,30 +31,41 @@ if __name__ == "__main__":
     class_report_path = saveLoc + ReportName
 
     # Load the parameters file
-    if os.path.exists("/Build/model_params.yml"):
+    if os.path.exists(os.getcwd() +'\Build\model_params.yml'):
         with open(os.getcwd() +'\Build\model_params.yml') as f:
             params = yaml.load(f, Loader=yaml.FullLoader)
     else:
         print('Parameters file is missing.')
 
     if params['ReloadData'] is True:
+        language = params['Language']
 
         if params['Database'] == 'Eatfit':
+            column = 'text'
             # Load data from the Eatfit SQL database
-            language = params['Language']
             df = query_eatfit_db_ingr_ubp(language)
 
         if params['Database'] == 'OpenFoodFacts':
             # Load data from the OFF mongodb database
             DOMAIN = 'localhost'
             PORT = 27017
+            column = 'ingredients_text_{}'.format(params['Language'])
             OFF_db = connect_mongo(DOMAIN, PORT)
+            if language =='de':
+                df = query_off_data_de(OFF_db)
+            elif language == 'en':
+                df = query_off_data_en(OFF_db)
+            else:
+                None
 
         print('Data retrieved')
         print(df.head())
 
         # Drop rows without an ingredients list
-        df = clean_dataframe(df, params['Language'])
+        if params['Database']=='Eatfit':
+            df = clean_dataframe(df, params['Language'])
+        else:
+            df = clean_OFF_dataframe(df, params['Language'])
 
         # #check for empty values
         # df = check_for_NaN_values(df)
@@ -64,24 +75,34 @@ if __name__ == "__main__":
         # print(text)
 
         # Clean the ingredient list text
-        cleaned_dt = text_cleaning(df, params['Language'])
+        cleaned_dt = text_cleaning(df, params['Language'], column)
         print(cleaned_dt.head())
 
         # save interim results as csv file
         # cleaned_dt.to_csv(os.getcwd() +'/interim_results/cleaned_data.csv')
-        cleaned_dt.to_pickle(os.getcwd() +'/interim_results/cleaned_data.pkl')
+        if params['Database']=='Eatfit':
+            cleaned_dt.to_pickle(os.getcwd() +'/interim_results/cleaned_data.pkl')
+        else:
+            cleaned_dt.to_pickle(os.getcwd() +'/interim_results/cleaned_data_OFF.pkl')
         # another interesting option would be to_parquet
 
     else:
-        cleaned_dt = pd.read_pickle(os.getcwd() +'/interim_results/cleaned_data.pkl')
+        if params['Database']=='Eatfit':
+            cleaned_dt = pd.read_pickle(os.getcwd() +'/interim_results/cleaned_data.pkl')
+        else:
+            cleaned_dt = pd.read_pickle(os.getcwd() +'/interim_results/cleaned_data_OFF.pkl')
         # cleaned_dt = pd.read_csv(os.getcwd() +'/interim_results/cleaned_data.csv')
 
     # ------------------MODEL-------------------------
 
     # Split the data into train & test sets
 
-    X = cleaned_dt['text']
-    y = cleaned_dt['ubp_score']
+    if params['Database']=='Eatfit':
+        X = cleaned_dt['text']
+        y = cleaned_dt['ubp_score']
+    else:
+        X = cleaned_dt['ingredients_text_{}'.format(params['Language'])]
+        y = cleaned_dt['ecoscore_grade']
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=params['SplitSize'], random_state=params['RandomState'])
 

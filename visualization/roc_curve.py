@@ -10,7 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.multiclass import OneVsRestClassifier
 
 
-def multiclass_roc_curve(X, y): # other input parameters: clf, figsize, n_classes
+def multiclass_roc_curve(X, y, disp): # other input parameters: clf, figsize, n_classes
     # Binarize the output
     y = label_binarize(y, classes=['A', 'B', 'C', 'D', 'E'])
     n_classes = y.shape[1]
@@ -56,23 +56,24 @@ def multiclass_roc_curve(X, y): # other input parameters: clf, figsize, n_classe
 
     # Plot all ROC curves
     plt.figure()
-    # plt.plot(
-    #     fpr["micro"],
-    #     tpr["micro"],
-    #     label="micro-average ROC curve (area = {0:0.2f})".format(roc_auc["micro"]),
-    #     color="firebrick",
-    #     linestyle="dashdot",
-    #     linewidth=lw,
-    # )
+    if disp == 'avg':
+        plt.plot(
+            fpr["micro"],
+            tpr["micro"],
+            label="micro-average ROC curve (area = {0:0.2f})".format(roc_auc["micro"]),
+            color="firebrick",
+            linestyle="dashdot",
+            linewidth=lw,
+        )
 
-    # plt.plot(
-    #     fpr["macro"],
-    #     tpr["macro"],
-    #     label="macro-average ROC curve (area = {0:0.2f})".format(roc_auc["macro"]),
-    #     color="black",
-    #     linestyle="dashdot",
-    #     linewidth=lw,
-    # )
+        plt.plot(
+            fpr["macro"],
+            tpr["macro"],
+            label="macro-average ROC curve (area = {0:0.2f})".format(roc_auc["macro"]),
+            color="black",
+            linestyle="dashdot",
+            linewidth=lw,
+        )
 
     dict_class = {
         '0': 'A',
@@ -81,16 +82,16 @@ def multiclass_roc_curve(X, y): # other input parameters: clf, figsize, n_classe
         '3': 'D',
         '4': 'E'
     }
-
-    colors = cycle(["steelblue", "seagreen", "black","firebrick", "grey"])
-    for i, color in zip(range(n_classes), colors):
-        plt.plot(
-            fpr[i],
-            tpr[i],
-            color=color,
-            lw=lw,
-            label="ROC curve of class {0} (area = {1:0.2f})".format(dict_class[str(i)], roc_auc[i]),
-        )
+    if disp == 'single':
+        colors = cycle(["steelblue", "seagreen", "black","firebrick", "grey"])
+        for i, color in zip(range(n_classes), colors):
+            plt.plot(
+                fpr[i],
+                tpr[i],
+                color=color,
+                lw=lw,
+                label="ROC curve of class {0} (area = {1:0.2f})".format(dict_class[str(i)], roc_auc[i]),
+            )
 
     plt.plot([0, 1], [0, 1], "k--", lw=lw)
     plt.xlim([0.0, 1.0])
@@ -114,4 +115,4 @@ if __name__ == "__main__":
     vectorizer = TfidfVectorizer()
     X = vectorizer.fit_transform(X)
 
-    multiclass_roc_curve(X,y)
+    multiclass_roc_curve(X,y, 'avg') # 'single'

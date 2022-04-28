@@ -38,7 +38,7 @@ def remove_stop_words_de(text):
     de_stopwords = stopwords.words('german')
 
     # Ingredients list- specific additions
-    de_stopwords.extend(['Zutaten'])
+    de_stopwords.extend(['Zutaten', 'Bezeichnung', 'Herkunft', 'gefangen'])
 
     filtered_words = [word for word in text if word not in de_stopwords]
 
@@ -71,27 +71,39 @@ def clean_dataframe(df, language):
 
     return df
 
-def text_cleaning(df, language):
+def clean_OFF_dataframe(df, language):
+    # Drop empty values
+    if language == 'de':
+        df.dropna(subset=['ingredients_text_de', 'ecoscore_grade'],inplace=True)
+    else:
+        df.dropna(subset=['ingredients_text_en', 'ecoscore_grade'],inplace=True)
+    
+    # Other deletions
+    df = df[df.ecoscore_grade != 'unknown'] 
+    df = df[df.ecoscore_grade != 'not-applicable']
+    return df
+
+def text_cleaning(df, language, column):
     
     # remove punctuation
-    df['text'] = df['text'].apply(lambda x: remove_punctuation(x))
+    df[column] = df[column].apply(lambda x: remove_punctuation(x))
 
     # Tokenization an lower case only
-    df['text']= df['text'].apply(lambda x: word_tokenize(x.lower()))
+    df[column]= df[column].apply(lambda x: word_tokenize(x.lower()))
 
     # Filter out stop words
     if language == 'en':
-        df['text']= df['text'].apply(lambda x: remove_stop_words_en(x))
+        df[column]= df[column].apply(lambda x: remove_stop_words_en(x))
     
     if language == 'de':
-        df['text']= df['text'].apply(lambda x: remove_stop_words_de(x))
+        df[column]= df[column].apply(lambda x: remove_stop_words_de(x))
     
     #Stemming
     if language == 'en':
-        df['text']=df['text'].apply(lambda x: word_stemmer_en(x))
+        df[column]=df[column].apply(lambda x: word_stemmer_en(x))
     
     if language == 'de':
-        df['text']=df['text'].apply(lambda x: word_stemmer_de(x))
+        df[column]=df[column].apply(lambda x: word_stemmer_de(x))
 
     return df
 

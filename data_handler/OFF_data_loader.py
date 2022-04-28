@@ -1,54 +1,18 @@
-# import pandas as pd
+import pandas as pd
 # import os
 
+"""
+important: mongod.exe must be executed from the cmd first to be able to connect to MongoDB server
+"""
 
-
-# ------------SDK option ----------------------
-# import openfoodfacts
-# # test the Python package - currently not working
-# login_session_object = openfoodfacts.utils.login_into_OFF()
-
-# traces = openfoodfacts.facets.get_additives()
-
-# print(traces)
-
-
-# -------------- CSV option --------------------
-# # Read the csv export
-
-# #set the working directory
-# path = r"C:\Users\Giorgio\Desktop\ETH\Code"
-# os.chdir(path)
-
-# # Load the data
-# df = pd.read_csv("openfoodfacts_export.csv", sep ='\t')
-# data = df.loc[:, ['code', 'product_name_en', 'product_name_fr', 'ingredients_text_fr', 'ingredients_text_en', 'off:ecoscore_grade', 'off:ecoscore_score']]
-
-# print(data.head())
-# print(len(data))
-
-# # Check the existence of NaN values and the rating distribution
-# print("\nThe following number of cells is empty")
-# print(data.isnull().sum())
-
-# # Drop empty values
-# print("\nDropping rows with no rating or ingredient list")
-# data.dropna(subset=['ingredients_text_fr','off:ecoscore_score'], inplace=True)
-
-# print("\nthe new datasets has " + str(len(data)) + " entries.")
-# print(data.isnull().sum())
-
-# -----------Mongo db option---------------------
+# -----------pyMongo option---------------------
 from pymongo import MongoClient, errors
-
-DOMAIN = 'localhost' # Note: this should be replaced by the URL of your own container!! 
-PORT = 27017
 
 def connect_mongo(host, port):
     # use a try-except indentation to catch MongoClient() errors
     try:
         # try to instantiate a client instance
-        client = MongoClient(DOMAIN, PORT)
+        client = MongoClient(host, port)
 
         OFF_db = client.off
         
@@ -61,8 +25,60 @@ def connect_mongo(host, port):
 
     return OFF_db
 
+def query_off_data_de(OFF_db):
+
+    proj = {
+    'product_name_en': True,
+    'ingredients_text_de': True,
+    'id': True,
+    'countries_tags': True,
+    'ecoscore_grade': True,
+    }
+
+    cursor = OFF_db.products.find(
+        { '$and':[ 
+            {'ingredients_text_de': {'$exists': True}},
+            {'$or': [
+                {"countries_tags": {'$regex': 'switzerland'}},
+                {'countries_tags':{'$regex': 'suisse'}}
+            ]} 
+        ]}
+        , proj)
+    list_cur = list(cursor)
+    df = pd.DataFrame(list_cur)
+    return df
+
+def query_off_data_en(OFF_db):
+
+    proj = {
+    'product_name_en': True,
+    'ingredients_text_en': True,
+    'id': True,
+    'countries_tags': True,
+    'ecoscore_grade': True,
+    }
+
+    cursor = OFF_db.products.find(
+        { '$and':[ 
+            {'ingredients_text_en': {'$exists': True}},
+            {'$or': [
+                {"countries_tags": {'$regex': 'switzerland'}},
+                {'countries_tags':{'$regex': 'suisse'}}
+            ]} 
+        ]}
+        , proj)
+    list_cur = list(cursor)
+    df = pd.DataFrame(list_cur)
+    return df
+
+
 if __name__ == "__main__":
+    DOMAIN = 'localhost' # Note: this should be replaced by the URL of your own container!! 
+    PORT = 27017
     OFF_db = connect_mongo(DOMAIN, PORT)
+
+    df = query_off_data_de(OFF_db)
+    print(df.head())
 
     # Count documents
 
@@ -74,29 +90,21 @@ if __name__ == "__main__":
     #     {"countries": {'$regex': 'Schweiz'}}, {'countries':{'$regex': 'Zwitserland'}},
     #     {"countries": {'$regex': 'Svizzera'}}
     #     ]})) # returns 16248 entries
-
-    print(OFF_db.products.count_documents({ '$or': [
-        {"countries_tags": {'$regex': 'switzerland'}},
-        {'countries_tags':{'$regex': 'suisse'}},
-    ]})) # returns 47407 entries
+    # print(OFF_db.products.count_documents({ '$or': [
+    #     {"countries_tags": {'$regex': 'switzerland'}},
+    #     {'countries_tags':{'$regex': 'suisse'}},
+    # ]})) # returns 47407 entries
 
     # Queries
-
-    proj = {
-        'product_name_fr': True,
-        'product_name_de': True,
-        'product_name_en': True,
-        'categories': True,
-        'ingredients_text_de': True,
-        'Ingredients_text_fr': True,
-        'Ingredients_text_en': True,
-        'countries': True,
-        'countries_tags': True,
-        'ecoscore_grade': True,
-    }
-
-    # Query to find a single document matching the query - if empty returns the first document
-    print(OFF_db.products.find_one({'countries': 'Switzerland'}, proj))
+    # print(OFF_db.products.find_one(
+    #     { '$and':[ 
+    #         {'ingredients_text': {'$exists': True}},
+    #         {'$or': [
+    #             {"countries_tags": {'$regex': 'switzerland'}},
+    #             {'countries_tags':{'$regex': 'suisse'}}
+    #         ]} 
+    #     ]}
+    #     ))
 
     # Query for more than one document
 
