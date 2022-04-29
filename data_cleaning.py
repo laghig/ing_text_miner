@@ -5,6 +5,7 @@ from nltk.tokenize import word_tokenize
 from nltk.stem.porter import * # porter stemmer was developed for the english language
 from nltk.stem.cistem import * # Cistem seems to be the best stemmer for the german language
 
+# nltk.download('stopwords')
 """
 Cleaning:
     clean_dataframe:

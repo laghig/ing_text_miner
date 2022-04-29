@@ -1,6 +1,6 @@
 # Data
-Database: 'OpenFoodFacts'  # 'OpenFoodFacts' / 'Eatfit'
-ReloadData: true
+Database: 'Eatfit'  # 'OpenFoodFacts' / 'Eatfit'
+ReloadData: false
 
 # Model parameters
 classifier: "RandomForest"
