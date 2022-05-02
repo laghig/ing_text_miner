@@ -12,6 +12,7 @@ from sklearn import metrics
 #own imports - switch to importing all methods at once
 from data_handler.Data_loader import *
 from data_handler.OFF_data_loader import *
+from data_handler.Data_balancer import *
 from data_cleaning import *
 #from visualization.roc_curve import plot_multiclass_roc
 
@@ -104,6 +105,11 @@ if __name__ == "__main__":
         X = cleaned_dt['ingredients_text_{}'.format(params['Language'])]
         y = cleaned_dt['ecoscore_grade']
 
+    if params['DataBalancing']== 'RandomUpsampling':
+        vectorizer = TfidfVectorizer()
+        X = vectorizer.fit_transform(X)
+        X, y = random_upsampler(X,y) # ,random_state=0
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=params['SplitSize'], random_state=params['RandomState'])
 
     # Build a pipeline, train and fit the model
@@ -112,10 +118,13 @@ if __name__ == "__main__":
         clf = RandomForestClassifier()
     elif params['classifier'] == "NaiveBayes":
         clf = MultinomialNB()
-    else:
-        None
 
-    text_clf = Pipeline([('tfidf', TfidfVectorizer()), ('clf', clf),]) # some preprocessing could be avoided by adding few parameters in the model.
+    if params['DataBalancing']== 'RandomUpsampling':
+        estimators = [('clf', clf),]
+    else:
+        estimators = [('tfidf', TfidfVectorizer()), ('clf', clf),]
+
+    text_clf = Pipeline(estimators) # some preprocessing could be avoided by adding few parameters in the model.
 
     text_clf.fit(X_train, y_train)
 

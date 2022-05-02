@@ -7,3 +7,4 @@ classifier: "RandomForest"
 Language: 'de' # 'en'
 SplitSize: 0.33
 RandomState: 42
+DataBalancing: 'RandomUpsampling'
