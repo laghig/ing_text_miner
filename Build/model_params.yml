@@ -1,10 +1,15 @@
 # Data
 Database: 'Eatfit'  # 'OpenFoodFacts' / 'Eatfit'
-ReloadData: false
+ReloadData: False # True / False
+Language: 'de' # 'en' / 'de' / 'fr' !!! Data has to be reloaded if the language is changed !!!
+
+DataBalancing:  
+  Exe: True # True / False
+  Balancer: 'smote' # 'None' / 'RandomUpsampling' / 'smote'
 
 # Model parameters
-classifier: "RandomForest"
-Language: 'de' # 'en'
+classifier: "RandomForest" # 'RandomForest' / "NaiveBayes"
 SplitSize: 0.33
-RandomState: 42
-DataBalancing: 'RandomUpsampling'
+RandomState: 4 # Integer or None
+
+

@@ -105,10 +105,13 @@ if __name__ == "__main__":
         X = cleaned_dt['ingredients_text_{}'.format(params['Language'])]
         y = cleaned_dt['ecoscore_grade']
 
-    if params['DataBalancing']== 'RandomUpsampling':
+    if params['DataBalancing']['Exe']== True:
         vectorizer = TfidfVectorizer()
-        X = vectorizer.fit_transform(X)
-        X, y = random_upsampler(X,y) # ,random_state=0
+        vectorized_X = vectorizer.fit_transform(X)
+        if params['DataBalancing']['Balancer']== 'RandomUpsampling':
+            X, y = random_upsampler(vectorized_X,y) # ,random_state=0
+        if params['DataBalancing']['Balancer']== 'smote':
+            X, y = smote_oversampler(vectorized_X,y)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=params['SplitSize'], random_state=params['RandomState'])
 
@@ -119,7 +122,7 @@ if __name__ == "__main__":
     elif params['classifier'] == "NaiveBayes":
         clf = MultinomialNB()
 
-    if params['DataBalancing']== 'RandomUpsampling':
+    if params['DataBalancing']['Exe']== True:
         estimators = [('clf', clf),]
     else:
         estimators = [('tfidf', TfidfVectorizer()), ('clf', clf),]

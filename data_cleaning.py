@@ -4,6 +4,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem.porter import * # porter stemmer was developed for the english language
 from nltk.stem.cistem import * # Cistem seems to be the best stemmer for the german language
+from nltk.stem.snowball import FrenchStemmer 
 
 # nltk.download('stopwords')
 """
@@ -15,8 +16,8 @@ Cleaning:
     text_cleaning:
         no punctuation
         lowercase only
-        remove stop words -> language dependency
-        stemming
+        remove stop words -> language dependency: en, de, fr
+        stemming -> language dependency: en, de, fr
 """
 
 def remove_punctuation(text):
@@ -45,6 +46,17 @@ def remove_stop_words_de(text):
 
     return filtered_words
 
+def remove_stop_words_fr(text):
+    # Stop words - standard dictionary
+    fr_stopwords = stopwords.words('french')
+
+    # Ingredients list- specific additions
+    fr_stopwords.extend(['Ingrédients', 'ingrédient', 'Produkt',])
+
+    filtered_words = [word for word in text if word not in fr_stopwords]
+
+    return filtered_words
+
 def word_stemmer_de(text):
 
     stemmer = Cistem()
@@ -54,8 +66,14 @@ def word_stemmer_de(text):
 
 def word_stemmer_en(text):
 
-    # Use Porter stemmer
     stemmer = PorterStemmer()   
+    words_stem = " ".join([stemmer.stem(word) for word in text])
+
+    return words_stem
+
+def word_stemmer_fr(text):
+
+    stemmer = FrenchStemmer()   
     words_stem = " ".join([stemmer.stem(word) for word in text])
 
     return words_stem
@@ -69,6 +87,9 @@ def clean_dataframe(df, language):
 
     if language == 'en':
         df = df[df.text != 'Product information’s are not available in English']
+
+    if language == 'fr':
+        df = df[df.text != 'Produkt'] # add here all prod_id with the text in german
 
     return df
 
@@ -99,6 +120,10 @@ def text_cleaning(df, language, column):
         df[column]= df[column].apply(lambda x: remove_stop_words_de(x))
         df[column]=df[column].apply(lambda x: word_stemmer_de(x))
     
+    if language == 'fr':
+        df[column]= df[column].apply(lambda x: remove_stop_words_fr(x))
+        df[column]=df[column].apply(lambda x: word_stemmer_fr(x))
+
     return df
 
 if __name__ == "__main__":
