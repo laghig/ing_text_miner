@@ -1,5 +1,6 @@
 import pandas as pd
 import string
+import re
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem.porter import * # porter stemmer was developed for the english language
@@ -19,6 +20,12 @@ Cleaning:
         remove stop words -> language dependency: en, de, fr
         stemming -> language dependency: en, de, fr
 """
+
+# -------- Cleaning functions ----------------
+
+def decimal_with_point(text):
+    text = re.sub('(?<=\d),(?=\d)', '.', text)
+    return text
 
 def remove_punctuation(text):
     no_punct = text.translate(str.maketrans('', '', string.punctuation))
@@ -129,13 +136,22 @@ def text_cleaning(df, language, column):
 if __name__ == "__main__":
     
     # TEST
-    random_text = "I love veggies, but I can't imagine to not eat meat - it's just too good! I: ?just try ; to eat^ less of it."
+    # random_text = "I love veggies, but I can't imagine to not eat meat - it's just too good! I: ?just try ; to eat^ less of it."
 
-    clean_text = remove_punctuation(random_text)
-    print(clean_text)
-    clean_text=word_tokenize(clean_text.lower())
-    print(clean_text)
-    clean_text=remove_stop_words_en(clean_text)
-    print(clean_text)
-    clean_text=word_stemmer_en(clean_text)
-    print(clean_text)
+    # clean_text = remove_punctuation(random_text)
+    # print(clean_text)
+    # clean_text=word_tokenize(clean_text.lower())
+    # print(clean_text)
+    # clean_text=remove_stop_words_en(clean_text)
+    # print(clean_text)
+    # clean_text=word_stemmer_en(clean_text)
+    # print(clean_text)
+
+    # Model Modifications:
+
+    rnd_text = " sugar, palm oil, hazelnuts 13%, skimmed milk powder 8,7%, lean cocoa is 7,4%, emulsifiers : lecithins [soy] , vanillin,"
+    # Problem: in OFF database percentages are comma separated
+
+    clean= decimal_with_point(rnd_text)
+    print(clean)
+    print(first_five_ing(clean))

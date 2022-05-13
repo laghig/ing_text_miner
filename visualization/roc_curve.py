@@ -114,5 +114,4 @@ if __name__ == "__main__":
 
     vectorizer = TfidfVectorizer()
     X = vectorizer.fit_transform(X)
-
-    multiclass_roc_curve(X,y, 'single') # 'single' / 'avg'
+    multiclass_roc_curve(X,y, 'avg') # 'single' / 'avg'

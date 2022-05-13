@@ -101,9 +101,9 @@ def connect_eatfit_db(sql_query=string):
             connection.close()
             print("MySQL connection is closed")
 
-def query_eatfit_db_ingr_ubp(language):
+def query_eatfit_db_ingr_label(language):
     """
-    Query to fetch a table with the upb score and the ingredients list depending on the specified language
+    Query to fetch a table with the upb label and the ingredients list depending on the specified language
     Input: language: string
     Output: df: pandas dataframe
     """
@@ -121,12 +121,23 @@ def query_eatfit_db_ingr_ubp(language):
     df = connect_eatfit_db(query)
     return df
 
-def query_eatfit_db_ingr_eng(query=string):
+def query_eatfit_db_ingr_ubp(language):
     """
-    Match the SQL text, query the database, and return a pandas df
-    Input: query: variable name of the SQL text
+    Query to fetch a table with the upb/kg values and the ingredients list depending on the specified language
+    Input: language: string
     Output: df: pandas dataframe
     """
+    query = "SELECT b.product_id, bls_lca.bls_code, ubp_pro_kg, ubp_score, lca_description, b.text, b.lang \
+            FROM bls_lca INNER JOIN \
+            (SELECT  BLS_Code, a.product_id, prod_id, a.text, a.lang \
+            FROM  nutritiondb.bls_matching_prod_zahw \
+            INNER JOIN \
+            (SELECT *  \
+            FROM nutritiondb.ingredient \
+            WHERE lang ='{}') as a \
+            ON bls_matching_prod_zahw.prod_id = a.product_id) as b \
+            ON b.BLS_Code = bls_lca.bls_code;".format(language)
+    
     df = connect_eatfit_db(query)
     return df
 

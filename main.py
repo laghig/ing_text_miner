@@ -1,19 +1,13 @@
 import pandas as pd
 import datetime as dt
-from nltk.stem.porter import *
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.naive_bayes import MultinomialNB
-# from sklearn.svm import LinearSVC
-from sklearn import metrics
 
 #own imports - switch to importing all methods at once
 from data_handler.Data_loader import *
 from data_handler.OFF_data_loader import *
 from data_handler.Data_balancer import *
 from data_cleaning import *
+from Model.model_comp import *
 #from visualization.roc_curve import plot_multiclass_roc
 
 """
@@ -37,6 +31,8 @@ if __name__ == "__main__":
             params = yaml.load(f, Loader=yaml.FullLoader)
     else:
         print('Parameters file is missing.')
+
+    # ------------------  DATA LOADING ------------------------
 
     if params['ReloadData'] is True:
         language = params['Language']
@@ -62,6 +58,8 @@ if __name__ == "__main__":
         print('Data retrieved')
         print(df.head())
 
+    # ---------------- DATA CLEANING -------------------------
+
         # Drop rows without an ingredients list
         if params['Database']=='Eatfit':
             df = clean_dataframe(df, params['Language'])
@@ -77,6 +75,7 @@ if __name__ == "__main__":
 
         # Clean the ingredient list text
         cleaned_dt = text_cleaning(df, params['Language'], column)
+        print('Data cleaned')
         print(cleaned_dt.head())
 
         # save interim results as csv file
@@ -94,13 +93,15 @@ if __name__ == "__main__":
             cleaned_dt = pd.read_pickle(os.getcwd() +'/interim_results/cleaned_data_OFF.pkl')
         # cleaned_dt = pd.read_csv(os.getcwd() +'/interim_results/cleaned_data.csv')
 
-    # ------------------MODEL-------------------------
-
-    # Split the data into train & test sets
+    # ------------------DATA SELECTION AND BALANCING-------------------------
 
     if params['Database']=='Eatfit':
-        X = cleaned_dt['text']
-        y = cleaned_dt['ubp_score']
+        if params['ModelParameters']['approach']== 'classification':
+            X = cleaned_dt['text']
+            y = cleaned_dt['ubp_score']
+        if params['ModelParameters']['approach']== 'linearReg':
+                X = cleaned_dt['text']
+                y = cleaned_dt['ubp_pro_kg']
     else:
         X = cleaned_dt['ingredients_text_{}'.format(params['Language'])]
         y = cleaned_dt['ecoscore_grade']
@@ -113,43 +114,22 @@ if __name__ == "__main__":
         if params['DataBalancing']['Balancer']== 'smote':
             X, y = smote_oversampler(vectorized_X,y)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=params['SplitSize'], random_state=params['RandomState'])
+    # ------------------------ MODEL ------------------------------
 
-    # Build a pipeline, train and fit the model
+    model = ModelStructure(X,y, params['ModelParameters'])
 
-    if params['classifier'] == "RandomForest":
-        clf = RandomForestClassifier()
-    elif params['classifier'] == "NaiveBayes":
-        clf = MultinomialNB()
+    model.assemble()
+    model.report()
 
-    if params['DataBalancing']['Exe']== True:
-        estimators = [('clf', clf),]
-    else:
-        estimators = [('tfidf', TfidfVectorizer()), ('clf', clf),]
+    # ----------------------- REPORT -----------------------------
 
-    text_clf = Pipeline(estimators) # some preprocessing could be avoided by adding few parameters in the model.
-
-    text_clf.fit(X_train, y_train)
-
-    # Form a prediction set
-    predictions = text_clf.predict(X_test)
-
-    # --------------RESULTS------------------
-    # Report the confusion matrix, the classification report, and the  overall accuracy
- 
     txt_block = [
         str("Date: " + dt.datetime.now().strftime('%d/%m/%Y %H:%M')),
         str("Database: " + params['Database']),
-        str("Language: " + params['Language']),
-        str("Classifier:" + params['classifier']),
-        "Split Size: " + str(params['SplitSize']), '\n',
-        "CONFUSION MATRIX =",
-        metrics.confusion_matrix(y_test,predictions), '\n',
-        "CLASSIFICATION REPORT =",
-        metrics.classification_report(y_test,predictions), '\n',
-        "ACCURACY SCORE =", 
-        metrics.accuracy_score(y_test,predictions), '\n'
-     ]
+        str("Language: " + params['Language']) 
+    ]
+
+    txt_block += model.txt_block
 
     with open(os.getcwd() + class_report_path, 'w') as f:
         for txt in txt_block:
@@ -157,11 +137,3 @@ if __name__ == "__main__":
             f.write('\n')
 
     print("Completed successfully")
-    
-    # print(metrics.confusion_matrix(y_test,predictions))
-    # print(metrics.classification_report(y_test,predictions))
-    # print(metrics.accuracy_score(y_test,predictions))
-
-    # generate the ROC curve
-    # plot_multiclass_roc()
-    # clf = OneVsRestClassifier(RandomForestClassifier()).fit(X, y)
