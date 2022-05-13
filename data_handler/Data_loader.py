@@ -6,140 +6,110 @@ import pandas as pd
 import sys
 import os
 
-#set the working directory
-path = r"C:\Users\Giorgio\Desktop\ETH\Code"
-os.chdir(path)
+class Eatfit_data:
 
-# Load the configuration file
-if os.path.exists("config.yml"):
-    with open(os.getcwd() +'\config.yml') as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
-else:
-    print('Config file is missing.')
+    def __init__(self, sql_query):
+        """
+        Class to fetch data form the eatfit db
 
-# ***QUERIES***
+        args:
+            sql_query: SQL query as a string
+        """
+        self.sql_query = sql_query
+        self.df = pd.DataFrame()
 
-# Query all major categories
-maj_categories = "SELECT * FROM nutritiondb.major_category"
+    def connect_eatfit_db(self, sql_query=string):
+        """
+        try-except indentation to connect to the eatfit db, queries are returned as pandas dataframe 
 
-# Query a specific nutritional table
-prod_id = 16
-nutr_table =    "SELECT  name, amount, unit_of_measure, is_mixed \
-            FROM nutritiondb.nutrition_fact \
-            WHERE product_id = {};".format(prod_id)
+        Args:
+            sql_query (string): SQL query as a string 
+        returns:
+            pandas dataframe: queried data
+        """
+        #set the working directory
+        path = r"C:\Users\Giorgio\Desktop\ETH\Code"
+        os.chdir(path)
 
-# Query all ingredients lists
-all_ingr_ls = "SELECT * \
-        FROM nutritiondb.ingredient"
+        # Load the configuration file
+        if os.path.exists("config.yml"):
+            with open(os.getcwd() +'\config.yml') as f:
+                config = yaml.load(f, Loader=yaml.FullLoader)
+        else:
+            print('Config file is missing.')
 
-# Query all english ingredients lists
-all_en_ingr_ls = "SELECT * \
-            FROM nutritiondb.ingredient \
-            WHERE lang = 'en' "
+        try:
+            connection = mysql.connector.connect(host=config['mysql_db']['Host'],
+                                user=config['mysql_db']['User'],
+                                passwd=config['mysql_db']['Password'],
+                                db=config['mysql_db']['Database'])
 
-# Query the ingredients list for a specific product
-prod_id = 16
-ingr_list=  "SELECT lang, text \
-        FROM nutritiondb.ingredient \
-        WHERE product_id = {};".format(prod_id)
-# in this case would not be better to generate a dictionary, with the language a key and the ingridients list as a value?
+            if connection.is_connected():
+                db_Info = connection.get_server_info()
+                print("Connected to MySQL Server version ", db_Info)
+                cursor = connection.cursor()
 
-# Query to retrieve the ingredient lists with the respective nutri-score
-nutri_score_ingr_en = "SELECT  product.id, a.text, a.lang, product.nutri_score_calculated \
-                    FROM  nutritiondb.product \
-                    LEFT JOIN \
-                    (SELECT * \
-                    FROM nutritiondb.ingredient \
-                    WHERE lang = 'en') as a \
-                    ON product.id = a.product_id;"
+                # SQL queries
+                cursor.execute(self.sql_query)
+                records = cursor.fetchall()
+                ls = []
+                for row in records:
+                    ls.append(row)
+                df = pd.DataFrame(ls, columns=[i[0] for i in cursor.description])
+                return df    
 
-bls_score_ingr_de = "SELECT  BLS_Code, a.product_id, prod_id, a.text, a.lang \
-                FROM  nutritiondb.lca_data_zahw \
-                INNER JOIN \
-                (SELECT *  \
-                FROM nutritiondb.ingredient \
-                WHERE lang = 'de') as a \
-                ON lca_data_zahw.prod_id = a.product_id;"
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+                print("MySQL connection is closed")
+        
 
+class query_eatfit:
+        """
+        Class to query the database depending on the specified parameters
+        """
+        def __init__(self):
+            pass
 
-def connect_eatfit_db(sql_query=string):
-    """
-    try-except indentation to connect to the eatfit db, queries are returned as pandas dataframe 
+        def query(self, data, language):
+            
+            if data == 'ingr_ubp_score':
+                df = self.__ingr_ubp_score(language)
+            elif data == 'ingr_nutriscore':
+                df = self.__ingr_nutri_score()
 
-    Args:
-        sql_query (string): SQL query as a string 
-    returns:
-        pandas dataframe: queried data
-    """
-    try:
-        connection = mysql.connector.connect(host=config['mysql_db']['Host'],
-                            user=config['mysql_db']['User'],
-                            passwd=config['mysql_db']['Password'],
-                            db=config['mysql_db']['Database'])
+            return df
 
-        sql_select_Query = sql_query
-
-        if connection.is_connected():
-            db_Info = connection.get_server_info()
-            print("Connected to MySQL Server version ", db_Info)
-            cursor = connection.cursor()
-
-            # SQL queries
-            cursor.execute(sql_select_Query)
-            records = cursor.fetchall()
-            ls = []
-            for row in records:
-                ls.append(row)
-            df = pd.DataFrame(ls, columns=[i[0] for i in cursor.description])
-            return df    
-
-    except Error as e:
-        print("Error while connecting to MySQL", e)
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
-            print("MySQL connection is closed")
-
-def query_eatfit_db_ingr_label(language):
-    """
-    Query to fetch a table with the upb label and the ingredients list depending on the specified language
-    Input: language: string
-    Output: df: pandas dataframe
-    """
-    query = "SELECT b.product_id, bls_lca.bls_code, ubp_score, lca_description, b.text, b.lang \
-            FROM bls_lca INNER JOIN \
-            (SELECT  BLS_Code, a.product_id, prod_id, a.text, a.lang \
-            FROM  nutritiondb.bls_matching_prod_zahw \
-            INNER JOIN \
-            (SELECT *  \
-            FROM nutritiondb.ingredient \
-            WHERE lang ='{}') as a \
-            ON bls_matching_prod_zahw.prod_id = a.product_id) as b \
-            ON b.BLS_Code = bls_lca.bls_code;".format(language)
-    
-    df = connect_eatfit_db(query)
-    return df
-
-def query_eatfit_db_ingr_ubp(language):
-    """
-    Query to fetch a table with the upb/kg values and the ingredients list depending on the specified language
-    Input: language: string
-    Output: df: pandas dataframe
-    """
-    query = "SELECT b.product_id, bls_lca.bls_code, ubp_pro_kg, ubp_score, lca_description, b.text, b.lang \
-            FROM bls_lca INNER JOIN \
-            (SELECT  BLS_Code, a.product_id, prod_id, a.text, a.lang \
-            FROM  nutritiondb.bls_matching_prod_zahw \
-            INNER JOIN \
-            (SELECT *  \
-            FROM nutritiondb.ingredient \
-            WHERE lang ='{}') as a \
-            ON bls_matching_prod_zahw.prod_id = a.product_id) as b \
-            ON b.BLS_Code = bls_lca.bls_code;".format(language)
-    
-    df = connect_eatfit_db(query)
-    return df
+        def __ingr_ubp_score(self, language):
+            sql_query = "SELECT b.product_id, bls_lca.bls_code, ubp_pro_kg, ubp_score, lca_description, b.text, b.lang \
+                        FROM bls_lca INNER JOIN \
+                        (SELECT  BLS_Code, a.product_id, prod_id, a.text, a.lang \
+                        FROM  nutritiondb.bls_matching_prod_zahw \
+                        INNER JOIN \
+                        (SELECT *  \
+                        FROM nutritiondb.ingredient \
+                        WHERE lang ='{}') as a \
+                        ON bls_matching_prod_zahw.prod_id = a.product_id) as b \
+                        ON b.BLS_Code = bls_lca.bls_code;".format(language)
+            
+            eatfit_db = Eatfit_data(sql_query)
+            df = eatfit_db.connect_eatfit_db()
+            return df
+        
+        def __ingr_nutri_score(self):
+            sql_query = "SELECT  product.id, a.text, a.lang, product.nutri_score_calculated \
+                        FROM  nutritiondb.product \
+                        LEFT JOIN \
+                        (SELECT * \
+                        FROM nutritiondb.ingredient \
+                        WHERE lang = 'en') as a \
+                        ON product.id = a.product_id;"
+            query_db = Eatfit_data(sql_query)
+            df = query_db.connect_eatfit_db()
+            return df
 
 def check_for_NaN_values(df):
     print("\n The following number of cells are empty")
@@ -151,3 +121,11 @@ def eatfit_data_summary(df):
     text =  " \n The number of entries are: " + str(len(df)) + "\n" 
             # "Nutri-score rating distribution across the dataset:" + str(df['nutri_score_calculated'].value_counts())
     return text
+
+query_eatfit_db = query_eatfit()
+
+if __name__ == "__main__":
+
+    df = query_eatfit_db.query('ingr_ubp_score', 'de')
+
+    print(df.head())

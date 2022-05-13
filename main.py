@@ -40,7 +40,7 @@ if __name__ == "__main__":
         if params['Database'] == 'Eatfit':
             column = 'text'
             # Load data from the Eatfit SQL database
-            df = query_eatfit_db_ingr_ubp(language)
+            df = query_eatfit_db.query('ingr_ubp_score', 'de')
 
         if params['Database'] == 'OpenFoodFacts':
             # Load data from the OFF mongodb database
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     txt_block = [
         str("Date: " + dt.datetime.now().strftime('%d/%m/%Y %H:%M')),
         str("Database: " + params['Database']),
-        str("Language: " + params['Language']) 
+        str("Language: " + params['Language']), '\n', 
     ]
 
     txt_block += model.txt_block

@@ -76,7 +76,7 @@ class ModelStructure:
 
         if self.modelparams['approach'] == 'linearReg':
             self.txt_block = [
-                "R squared: " + str(metrics.r2_score(self.y_test, self.predictions)), '\n',
+                "R squared: " + str(metrics.r2_score(self.y_test, self.predictions)),
                 "Mean squared error: " + str(metrics.mean_squared_error(self.y_test, self.predictions)), '\n',
              ]
 
