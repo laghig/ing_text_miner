@@ -29,9 +29,18 @@ def plot_class_count_hist(data):
     plt.title('OFF Data distribution', weight='bold', fontsize=TitleFontSize)
     plt.tick_params(labelsize=LabelFontSize)
     plt.tight_layout()
-    plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\class_distribution_OFF.png") # uncomment to save the plot 
+    # plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\class_distribution_OFF.png") # uncomment to save the plot 
     plt.show()
 
+def reg_scatter(y_test, predictions):
+    fig, ax = plt.subplots()
+    ax.scatter(y_test, predictions, edgecolors=(0, 0, 0))
+    ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], "k--", lw=4)
+    ax.set_xlabel("True score [UBP/kg]", fontsize=LabelFontSize)
+    ax.set_ylabel("Predicted score [UBP/kg]", fontsize=LabelFontSize)
+    ax.set_title('Prediction error', weight='bold', fontsize=TitleFontSize)
+    # plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\reg_scatter.png")
+    plt.show()
 
 
 if __name__ == "__main__":

@@ -46,8 +46,8 @@ def remove_stop_words_de(text):
     # Stop words - standard dictionary
     de_stopwords = stopwords.words('german')
 
-    # Ingredients list- specific additions
-    de_stopwords.extend(['Zutaten', 'Bezeichnung', 'Herkunft', 'gefangen'])
+    # Ingredients list- specific
+    de_stopwords.extend(['zutaten', 'bezeichnung', 'herkunft', 'gefangen'])
 
     filtered_words = [word for word in text if word not in de_stopwords]
 
@@ -109,7 +109,18 @@ def clean_OFF_dataframe(df, language):
     df = df[df.ecoscore_grade != 'not-applicable']
     return df
 
-def text_cleaning(df, language, column):
+def first_five_ing(text):
+    """
+    Input: string of the ingredients text separated by comma
+    Output: string with only the fist five ingredients
+    """
+    text = ",".join(text.split(",",5)[:-1])
+    return text
+
+def text_cleaning(df, language, column, model_modifications):
+
+    if model_modifications['OnlyFive'] is True:
+        df[column]= df[column].apply(lambda x: first_five_ing(x))
     
     # remove punctuation
     df[column] = df[column].apply(lambda x: remove_punctuation(x))
@@ -154,4 +165,4 @@ if __name__ == "__main__":
 
     clean= decimal_with_point(rnd_text)
     print(clean)
-    print(first_five_ing(clean))
+    #print(first_five_ing(clean))

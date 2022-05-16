@@ -9,12 +9,15 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Ridge
 # from sklearn.svm import LinearSVC
+from sklearn.model_selection import cross_validate
 from sklearn import metrics
 # from main import X
 
 
 #Own imports
-#from model_modifications import *
+#from model_mod import *
+
+
 
 class ModelStructure:
     X_train = pd.DataFrame()
@@ -22,12 +25,14 @@ class ModelStructure:
     y_train = pd.DataFrame()
     y_test = pd.DataFrame()
     prediction = pd.DataFrame()
+    scores = 0
     txt_block = ""
 
-    def __init__(self, X, y, modelparams):
+    def __init__(self, X, y, modelparams, modifications):
         self.X = X
         self.y=y
         self.modelparams = modelparams
+        self.modifications = modifications
 
         # self.assemble()
         # self.report()
@@ -58,6 +63,12 @@ class ModelStructure:
 
         # Form a prediction set
         self.predictions = text_clf.predict(self.X_test)
+
+        # Cross validation
+        if self.modelparams['approach']=='classification':
+            scoring = ['precision_macro', 'recall_macro', 'f1_macro']
+            self.scores = cross_validate(text_clf, self.X, self.y, cv=5, scoring=scoring)
+            #print(self.scores.keys())
     
     def report(self):
         if self.modelparams['approach'] == "classification":
@@ -65,6 +76,7 @@ class ModelStructure:
                     str("Classifier:" + self.modelparams['classifier']),
                     # str("Text feauture extractor:" + params['FeautureExt']),
                     "Split Size: " + str(self.modelparams['SplitSize']), '\n',
+                    "1. SINGLE RUN",
                     "CONFUSION MATRIX =",
                     metrics.confusion_matrix(self.y_test,self.predictions), '\n',
                     "CLASSIFICATION REPORT =",
@@ -72,10 +84,19 @@ class ModelStructure:
                     "ACCURACY SCORE =", 
                     metrics.accuracy_score(self.y_test,self.predictions), '\n'
                     "MCC =", metrics.matthews_corrcoef(self.y_test,self.predictions), '\n'
+                    "2. Cross validation (5-fold): ",
+                    "Precision: {} with a standard deviation of {}".format(round(self.scores['test_precision_macro'].mean(),3), round(self.scores['test_precision_macro'].std(),3)),
+                    "Recall: {} with a standard deviation of {}".format(round(self.scores['test_recall_macro'].mean(),3), round(self.scores['test_recall_macro'].std(),3)),
+                    "F1-Macro: {} with a standard deviation of {}".format(round(self.scores['test_f1_macro'].mean(),3), round(self.scores['test_f1_macro'].std(),3)),
              ]
+        
+        vectorizer = TfidfVectorizer()
+        vectorized_X = vectorizer.fit_transform(self.X_train)
 
         if self.modelparams['approach'] == 'linearReg':
             self.txt_block = [
+                "X_train shape: " + str(vectorized_X.shape),
+                "y_train shape: " + str(self.y_train.shape), '\n',
                 "R squared: " + str(metrics.r2_score(self.y_test, self.predictions)),
                 "Mean squared error: " + str(metrics.mean_squared_error(self.y_test, self.predictions)), '\n',
              ]

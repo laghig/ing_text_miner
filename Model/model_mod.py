@@ -1,4 +1,4 @@
-
+import string
 
 def first_five_ing(text):
     """
@@ -9,4 +9,5 @@ def first_five_ing(text):
     return text
 
 
-    
+if __name__ == "__main__":
+    print('hello')

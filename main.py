@@ -8,6 +8,7 @@ from data_handler.OFF_data_loader import *
 from data_handler.Data_balancer import *
 from data_cleaning import *
 from Model.model_comp import *
+from visualization.data_summary import reg_scatter, plot_class_count_hist
 #from visualization.roc_curve import plot_multiclass_roc
 
 """
@@ -40,7 +41,7 @@ if __name__ == "__main__":
         if params['Database'] == 'Eatfit':
             column = 'text'
             # Load data from the Eatfit SQL database
-            df = query_eatfit_db.query('ingr_ubp_score', 'de')
+            df = query_eatfit_db.query('ingr_ubp_score', language)
 
         if params['Database'] == 'OpenFoodFacts':
             # Load data from the OFF mongodb database
@@ -74,7 +75,7 @@ if __name__ == "__main__":
         # print(text)
 
         # Clean the ingredient list text
-        cleaned_dt = text_cleaning(df, params['Language'], column)
+        cleaned_dt = text_cleaning(df, params['Language'], column, params['ModelModifications'])
         print('Data cleaned')
         print(cleaned_dt.head())
 
@@ -116,7 +117,7 @@ if __name__ == "__main__":
 
     # ------------------------ MODEL ------------------------------
 
-    model = ModelStructure(X,y, params['ModelParameters'])
+    model = ModelStructure(X,y, params['ModelParameters'], params['ModelModifications'])
 
     model.assemble()
     model.report()
@@ -136,4 +137,11 @@ if __name__ == "__main__":
             f.write(str(txt))
             f.write('\n')
 
-    print("Completed successfully")
+# --------------plots---------
+# Data distribution:
+# plot_class_count_hist(data='OFF') # Options: 'eatfit' / 'OFF'
+
+# Prediction error scatter plot
+# reg_scatter(model.y_test, model.predictions)
+
+print("Completed successfully")
