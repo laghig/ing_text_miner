@@ -90,10 +90,12 @@ class ModelStructure:
                     "F1-Macro: {} with a standard deviation of {}".format(round(self.scores['test_f1_macro'].mean(),3), round(self.scores['test_f1_macro'].std(),3)),
              ]
         
-        vectorizer = TfidfVectorizer()
-        vectorized_X = vectorizer.fit_transform(self.X_train)
+
 
         if self.modelparams['approach'] == 'linearReg':
+            vectorizer = TfidfVectorizer()
+            vectorized_X = vectorizer.fit_transform(self.X_train)
+            
             self.txt_block = [
                 "X_train shape: " + str(vectorized_X.shape),
                 "y_train shape: " + str(self.y_train.shape), '\n',

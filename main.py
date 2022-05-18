@@ -8,7 +8,7 @@ from data_handler.OFF_data_loader import *
 from data_handler.Data_balancer import *
 from data_cleaning import *
 from Model.model_comp import *
-from visualization.data_summary import reg_scatter, plot_class_count_hist
+from visualization.data_summary import plot_value_distribution, reg_scatter, plot_class_count_hist
 #from visualization.roc_curve import plot_multiclass_roc
 
 """
@@ -96,46 +96,46 @@ if __name__ == "__main__":
 
     # ------------------DATA SELECTION AND BALANCING-------------------------
 
-    if params['Database']=='Eatfit':
-        if params['ModelParameters']['approach']== 'classification':
-            X = cleaned_dt['text']
-            y = cleaned_dt['ubp_score']
-        if params['ModelParameters']['approach']== 'linearReg':
-                X = cleaned_dt['text']
-                y = cleaned_dt['ubp_pro_kg']
-    else:
-        X = cleaned_dt['ingredients_text_{}'.format(params['Language'])]
-        y = cleaned_dt['ecoscore_grade']
+    # if params['Database']=='Eatfit':
+    #     if params['ModelParameters']['approach']== 'classification':
+    #         X = cleaned_dt['text']
+    #         y = cleaned_dt['ubp_score']
+    #     if params['ModelParameters']['approach']== 'linearReg':
+    #             X = cleaned_dt['text']
+    #             y = cleaned_dt['kg_CO2eq_pro_kg']
+    # else:
+    #     X = cleaned_dt['ingredients_text_{}'.format(params['Language'])]
+    #     y = cleaned_dt['ecoscore_grade']
 
-    if params['DataBalancing']['Exe']== True:
-        vectorizer = TfidfVectorizer()
-        vectorized_X = vectorizer.fit_transform(X)
-        if params['DataBalancing']['Balancer']== 'RandomUpsampling':
-            X, y = random_upsampler(vectorized_X,y) # ,random_state=0
-        if params['DataBalancing']['Balancer']== 'smote':
-            X, y = smote_oversampler(vectorized_X,y)
+    # if params['DataBalancing']['Exe']== True:
+    #     vectorizer = TfidfVectorizer()
+    #     vectorized_X = vectorizer.fit_transform(X)
+    #     if params['DataBalancing']['Balancer']== 'RandomUpsampling':
+    #         X, y = random_upsampler(vectorized_X,y) # ,random_state=0
+    #     if params['DataBalancing']['Balancer']== 'smote':
+    #         X, y = smote_oversampler(vectorized_X,y)
 
-    # ------------------------ MODEL ------------------------------
+    # # ------------------------ MODEL ------------------------------
 
-    model = ModelStructure(X,y, params['ModelParameters'], params['ModelModifications'])
+    # model = ModelStructure(X,y, params['ModelParameters'], params['ModelModifications'])
 
-    model.assemble()
-    model.report()
+    # model.assemble()
+    # model.report()
 
-    # ----------------------- REPORT -----------------------------
+    # # ----------------------- REPORT -----------------------------
 
-    txt_block = [
-        str("Date: " + dt.datetime.now().strftime('%d/%m/%Y %H:%M')),
-        str("Database: " + params['Database']),
-        str("Language: " + params['Language']), '\n', 
-    ]
+    # txt_block = [
+    #     str("Date: " + dt.datetime.now().strftime('%d/%m/%Y %H:%M')),
+    #     str("Database: " + params['Database']),
+    #     str("Language: " + params['Language']), '\n', 
+    # ]
 
-    txt_block += model.txt_block
+    # txt_block += model.txt_block
 
-    with open(os.getcwd() + class_report_path, 'w') as f:
-        for txt in txt_block:
-            f.write(str(txt))
-            f.write('\n')
+    # with open(os.getcwd() + class_report_path, 'w') as f:
+    #     for txt in txt_block:
+    #         f.write(str(txt))
+    #         f.write('\n')
 
 # --------------plots---------
 # Data distribution:
@@ -143,5 +143,8 @@ if __name__ == "__main__":
 
 # Prediction error scatter plot
 # reg_scatter(model.y_test, model.predictions)
+
+# Value distribution plot
+# plot_value_distribution(cleaned_dt['kg_CO2eq_pro_kg'])
 
 print("Completed successfully")

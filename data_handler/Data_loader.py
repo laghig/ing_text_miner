@@ -84,7 +84,7 @@ class query_eatfit:
             return df
 
         def __ingr_ubp_score(self, language):
-            sql_query = "SELECT b.product_id, bls_lca.bls_code, ubp_pro_kg, ubp_score, lca_description, b.text, b.lang \
+            sql_query = "SELECT b.product_id, bls_lca.bls_code, ubp_pro_kg, kg_CO2eq_pro_kg, ubp_score, lca_description, b.text, b.lang \
                         FROM bls_lca INNER JOIN \
                         (SELECT  BLS_Code, a.product_id, prod_id, a.text, a.lang \
                         FROM  nutritiondb.bls_matching_prod_zahw \

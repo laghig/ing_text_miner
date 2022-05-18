@@ -32,6 +32,15 @@ def plot_class_count_hist(data):
     # plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\class_distribution_OFF.png") # uncomment to save the plot 
     plt.show()
 
+def plot_value_distribution(x):
+    plt.hist(x, bins=25)
+    plt.xlabel('Kg CO2 eq/kg', fontsize=LabelFontSize)
+    plt.ylabel('Occurrence', fontsize=LabelFontSize)
+    plt.title('Value distribution', weight='bold', fontsize=TitleFontSize)
+    plt.tight_layout()
+    plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\value_distribution_CO2.png") # uncomment to save the plot 
+    plt.show()
+
 def reg_scatter(y_test, predictions):
     fig, ax = plt.subplots()
     ax.scatter(y_test, predictions, edgecolors=(0, 0, 0))

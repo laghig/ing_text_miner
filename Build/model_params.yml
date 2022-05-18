@@ -4,12 +4,12 @@ ReloadData: False # True / False
 Language: de # 'en' / 'de' / 'fr' !!! Data has to be reloaded if the language is changed !!!
 
 DataBalancing:  
-  Exe: False # True / False
+  Exe: False # True / False --> Balanced data has to adjusted as well!
   Balancer: smote # 'None' / 'RandomUpsampling' / 'smote'
 
 # Model parameters
 ModelParameters:
-  approach: classification # classification / linearReg
+  approach:  linearReg # classification / linearReg
   BalancedData: False # True / False
   classifier: RandomForest # RandomForest / NaiveBayes
   SplitSize: 0.3
@@ -18,6 +18,6 @@ ModelParameters:
 
 # Model modifications:
 ModelModifications:
-  OnlyFive: True # True / False
+  OnlyFive: False # True / False
 
 

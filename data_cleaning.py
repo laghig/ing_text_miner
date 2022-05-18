@@ -26,6 +26,9 @@ Cleaning:
 def decimal_with_point(text):
     text = re.sub('(?<=\d),(?=\d)', '.', text)
     return text
+def remove_numbers(text):
+    text = re.sub("\d+", "", text)
+    return text
 
 def remove_punctuation(text):
     no_punct = text.translate(str.maketrans('', '', string.punctuation))
@@ -47,7 +50,7 @@ def remove_stop_words_de(text):
     de_stopwords = stopwords.words('german')
 
     # Ingredients list- specific
-    de_stopwords.extend(['zutaten', 'bezeichnung', 'herkunft', 'gefangen'])
+    de_stopwords.extend(['zutaten', 'bezeichnung', 'herkunft', 'gefangen', 'kann', 'enthalten', 'spuren'])
 
     filtered_words = [word for word in text if word not in de_stopwords]
 
@@ -124,6 +127,9 @@ def text_cleaning(df, language, column, model_modifications):
     
     # remove punctuation
     df[column] = df[column].apply(lambda x: remove_punctuation(x))
+
+    # remove numbers
+    df[column] = df[column].apply(lambda x: remove_numbers(x))
 
     # Tokenization an lower case only
     df[column]= df[column].apply(lambda x: word_tokenize(x.lower()))
