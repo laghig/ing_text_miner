@@ -1,5 +1,5 @@
 import pandas as pd
-# import os
+import os
 
 """
 important: mongod.exe must be executed from the cmd first to be able to connect to MongoDB server
@@ -71,14 +71,44 @@ def query_off_data_en(OFF_db):
     df = pd.DataFrame(list_cur)
     return df
 
+def query_off_data(OFF_db, language):
+
+    proj = {
+    'product_name_{}'.format(language): True,
+    'ingredients_text_{}'.format(language): True,
+    'id': True,
+    'countries_tags': True,
+    }
+
+    cursor = OFF_db.products.find(
+        { '$and':[ 
+            {'ingredients_text_{}'.format(language): {'$exists': True}},
+            {'$or': [
+                {"countries_tags": {'$regex': 'switzerland'}},
+                {'countries_tags':{'$regex': 'suisse'}}
+            ]} 
+        ]}
+        , proj)
+    list_cur = list(cursor)
+    df = pd.DataFrame(list_cur)
+    return df
+
+def print_data_fields(OFF_db):
+    cursor = OFF_db.products.find_one({})
+    for document in cursor: 
+        print(document.keys())
+
 
 if __name__ == "__main__":
     DOMAIN = 'localhost' # Note: this should be replaced by the URL of your own container!! 
     PORT = 27017
     OFF_db = connect_mongo(DOMAIN, PORT)
+    language = 'fr' # 'de'. 'en'
 
-    df = query_off_data_de(OFF_db)
-    print(df.head())
+
+    df = query_off_data(OFF_db, language)
+    df.to_csv(r"C:\Users\Giorgio\Desktop\ETH\Master Thesis\off_data.csv")
+    # print(df.head())
 
     # Count documents
 

@@ -8,7 +8,7 @@ from nltk.stem.cistem import * # Cistem seems to be the best stemmer for the ger
 from nltk.stem.snowball import FrenchStemmer 
 
 # Own imports
-from bags_of_words import key_words, grouped_words
+from bags_of_words import key_words, grouped_words, country_list, country_codes, add_stopwords, units
 # nltk.download('stopwords')
 """
 Cleaning:
@@ -79,7 +79,10 @@ def remove_stop_words_en(text):
 def remove_stop_words_de(text):
     # Stop words - standard dictionary
     de_stopwords = stopwords.words('german')
-    de_stopwords.extend(['zutaten', 'natürliches', 'schweiz', 'bio'])   
+    # Additional stopwords
+    extra_stopwords = country_list + country_codes + add_stopwords + units
+    de_stopwords.extend(extra_stopwords)
+    
     filtered_words = [word for word in text if word not in de_stopwords]
     ing_list = ' '.join([str(elem) for elem in filtered_words])
     return ing_list
@@ -89,6 +92,10 @@ def bag_of_words_de(text):
     filtered_words = [word for word in text if word in key_words]
     ing_list = ' '.join([str(elem) for elem in filtered_words])
     return ing_list
+
+def remove_superscript(text):
+    text = ''.join([i for i in text if ord(i) < 128])
+    return text
 
 def remove_stop_words_fr(text):
     # Stop words - standard dictionary
@@ -183,14 +190,15 @@ def text_cleaning(df, language, column, model_modifications):
         df[column]=df[column].apply(lambda x: word_stemmer_en(x))
     
     if language == 'de':
+        df[column]= df[column].apply(lambda x: remove_stop_words_de(x))
+        # df[column]= df[column].apply(lambda x: bag_of_words_de(x))
 
-        # df[column]= df[column].apply(lambda x: remove_stop_words_de(x))
         # df[column]=df[column].apply(lambda x: word_stemmer_de(x))
 
-        df[column]= df[column].apply(lambda x: bag_of_words_de(x))
+
         # remove the remaining punctuation
         df[column] = df[column].apply(lambda x: remove_punctuation(x))
-        df[column]=df[column].apply(lambda x: group_ing(x))
+        # df[column]=df[column].apply(lambda x: group_ing(x))
          
     
     if language == 'fr':
@@ -220,5 +228,5 @@ if __name__ == "__main__":
     # clean= decimal_with_point(rnd_text)
     # print(first_five_ing(clean))
 
-    # clean = group_ing('biovollmilch pasteurisier lacto schweiz bergmilch biorahm schweiz salz jodfluorfrei schweiz sauerung')
-    # print(clean)
+    clean = group_ing('biovollmilch pasteurisier lacto schweiz bergmilch biorahm schweiz salz jodfluorfrei schweiz sauerung')
+    print(clean)
