@@ -10,9 +10,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.multiclass import OneVsRestClassifier
 
 
-def multiclass_roc_curve(X, y, disp): # other input parameters: clf, figsize, n_classes
+def multiclass_roc_curve(X, y, classes, disp): # other input parameters: clf, figsize, n_classes
     # Binarize the output
-    y = label_binarize(y, classes=['A', 'B', 'C', 'D', 'E'])
+    y = label_binarize(y, classes=classes)
     n_classes = y.shape[1]
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
@@ -103,9 +103,32 @@ def multiclass_roc_curve(X, y, disp): # other input parameters: clf, figsize, n_
     #plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\roc_curve.jpg") # uncomment to save the plot
     plt.show()
 
+# def roc_curve(classifiers):
+    # lw=1
+    # plt.figure()
+    # for classifier in classifiers:
+    #     model.fit(X_train, y_train)
+    #     y_pred = model.predict_proba(X_test)[:, 1]
+    #     fpr, tpr, _ = metrics.roc_curve(y_test, y_pred)
+    #     auc = round(metrics.roc_auc_score(y_test, y_pred), 4)
+    #     plt.plot(fpr,tpr,label= str(classifier) + ", AUC="+str(auc))
+
+
+    # plt.plot([0, 1], [0, 1], "k--", lw=lw)
+    # plt.xlim([0.0, 1.0])
+    # plt.ylim([0.0, 1.05])
+    # plt.xlabel("False Positive Rate")
+    # plt.ylabel("True Positive Rate")
+    # plt.title("Multiclass ROC curve", weight='bold')
+    # plt.legend(loc="lower right")
+    # #plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\roc_curve.jpg") # uncomment to save the plot
+    # plt.show
+
 if __name__ == "__main__":
     # import interim data as a pandas df
     df = pd.read_csv(r"C:\Users\Giorgio\Desktop\ETH\Code\interim_results\cleaned_data.csv")
+    classes = ['A', 'B', 'C', 'D', 'E'] # [1, 2, 3]
+    disp = 'single' # 'single' / 'avg'
 
     # train test split
     
@@ -114,4 +137,4 @@ if __name__ == "__main__":
 
     vectorizer = TfidfVectorizer()
     X = vectorizer.fit_transform(X)
-    multiclass_roc_curve(X,y, 'single') # 'single' / 'avg'
+    multiclass_roc_curve(X,y, classes, 'single')

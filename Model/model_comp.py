@@ -56,9 +56,9 @@ class ModelStructure:
 
     def assemble(self):
 
-        init_class_distribution = Counter(self.y)
-        print(init_class_distribution)
-        min_class_label, _ = init_class_distribution.most_common()[-4]
+        # init_class_distribution = Counter(self.y)
+        # print(init_class_distribution)
+        # min_class_label, _ = init_class_distribution.most_common()[-4]
 
         # Feauture extraction method
         if self.modelparams['feature_ext']=='tf-idf':
@@ -86,17 +86,13 @@ class ModelStructure:
             elif self.modelparams['algorithm'] == "DummyClassifier":
                 clf = DummyClassifier()
         if self.modelparams['approach']=='regression':
-            if self.modelparams['algorithm']=='linearReg':
-                clf = LinearRegression(positive=True) # positive=True
-                trf = FunctionTransformer(lambda x: x.toarray(), accept_sparse=True)
-            elif self.modelparams['algorithm']=='ridge':
-                clf = Ridge(positive=True)
-            elif self.modelparams['algorithm']=='SVR':
-                clf = svm.SVR(kernel='linear')
-            elif self.modelparams['algorithm'] == "KNN":
-                clf = KNeighborsRegressor() #leaf_size=1, p=2, n_neighbors=4
+            if self.modelparams['algorithm']=='ridge':
+                clf = Ridge(alpha=0.5, positive=True) #alpha=0.5, positive=True
             elif self.modelparams['algorithm']=='lasso':
-                clf = Lasso()
+                clf = Lasso(alpha=0.0004, positive=True) # alpha=0.001
+            elif self.modelparams['algorithm'] == "KNN":
+                clf = KNeighborsRegressor(leaf_size=5, n_neighbors=4, p=1) #leaf_size=1, p=2, n_neighbors=4
+
         
         # Data balancing
         over_smplr = None
@@ -120,21 +116,25 @@ class ModelStructure:
         
         if self.modelparams['Hyperparameter_opt']== True:
             if self.modelparams['algorithm'] == "KNN":
-                leaf_size = list(range(1,50))
-                n_neighbors = list(range(1,30))
+                leaf_size = list(range(1,10))
+                n_neighbors = list(range(1,10))
                 p=[1,2]
-                hyperparameters = dict(leaf_size=leaf_size, n_neighbors=n_neighbors, p=p)
+                hyperparameters = dict(clf__leaf_size=leaf_size, clf__n_neighbors=n_neighbors, clf__p=p)
+                score = 'neg_mean_squared_error'
             elif self.modelparams['algorithm']== "NaiveBayes":
                 hyperparameters = {
 
                 }
+            elif self.modelparams['algorithm'] == "ridge" or "lasso":
+                alphas = [0.0001, 0.0002, 0.0003, 0.0004, 0.0005]# Ridge: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.90, 1]
+                t_f = [True, False]
+                hyperparameters = dict(clf__alpha = alphas ) #clf__positive=t_f
+                score = 'neg_mean_squared_error'  # 'neg_mean_squared_error' / 'r2'
 
-           
             #Use GridSearch with the previously defined classifier
-            grid_tune = GridSearchCV(self.text_clf, hyperparameters, cv=10)
+            self.text_clf = GridSearchCV(self.text_clf, hyperparameters, scoring=score, cv=5)
             #Fit the model
-            # best_model = clf.fit(x,y)
-
+        
 
         # dummy_clf.fit(self.X_train, self.y_train)
         self.text_clf.fit(self.X_train, self.y_train)
@@ -145,12 +145,24 @@ class ModelStructure:
 
         #Print The value of best Hyperparameters
         if self.modelparams['Hyperparameter_opt']== True:
-            if self.modelparams['algorithm']== "KNN":
-                print('Best leaf_size:', grid_tune.best_estimator_.get_params()['leaf_size'])
-                print('Best p:', grid_tune.best_estimator_.get_params()['p'])
-                print('Best n_neighbors:', grid_tune.best_estimator_.get_params()['n_neighbors'])
-            elif self.modelparams['algorithm']== "NaiveBayes":
-                print('Best alpha: ')
+                grid_search_results = pd.DataFrame(self.text_clf.cv_results_)
+                # grid_search_results.to_csv(r"C:\Users\Giorgio\Desktop\best_parameter.csv")
+                print(grid_search_results)
+            # if self.modelparams['algorithm']== "KNN":
+            #     print('Best leaf_size:', self.text_clf.best_estimator_.get_params()['leaf_size'])
+            #     print('Best p:', self.text_clf.best_estimator_.get_params()['p'])
+            #     print('Best n_neighbors:', self.text_clf.best_estimator_.get_params()['n_neighbors'])
+            # elif self.modelparams['algorithm']== "NaiveBayes":
+            #     print('Best alpha: ')
+            # elif self.modelparams['algorithm']== "ridge" or "lasso":
+            #     # print(self.text_clf.best_estimator_.get_params())
+            #     grid_search_results = pd.DataFrame(self.text_clf.cv_results_)
+            #     print(grid_search_results)
+            #     # params = pd.DataFrame([i[0] for i in self.text_clf.grid_scores_])
+            #     # results = pd.DataFrame(self.text_clf.grid_scores_)
+            #     # results = pd.concat([params, results], 1)
+            #     # results["rmse"] = np.sqrt(-results.mean_validation_score)
+            #     # print(results.head(9))
 
 
 
@@ -181,8 +193,8 @@ class ModelStructure:
         # Cross validation
         if self.modelparams['approach']=='classification':
             scoring = ['precision_macro', 'recall_macro', 'accuracy','f1_macro']
-        if self.modelparams['approach']=='regression':
-            scoring= 'r2'
+        elif self.modelparams['approach']=='regression':
+            scoring= ['r2', 'neg_mean_squared_error']
         cv =  RepeatedKFold(n_splits=5, n_repeats=5, random_state=self.modelparams['RandomState'])
         self.scores = cross_validate(self.text_clf, self.X, self.y, cv=cv, scoring=scoring)
         # self.dummy_scores = cross_validate(dummy_clf, self.X, self.y, cv=5, scoring=scoring)
@@ -221,15 +233,16 @@ class ModelStructure:
         elif self.modelparams['approach'] == 'regression':
 
             self.txt_block = [
-                str('Method: ' + self.modelparams['approach']),
+                str('Method: ' + self.modelparams['algorithm'] + " " + self.modelparams['approach']),
                 "Split Size: " + str(self.modelparams['SplitSize']), '\n',
                 "X_train shape: " + str(vectorized_X.shape),
                 "y_train shape: " + str(self.y_train.shape), 
                 "avg number of ingredients: " + str(vectorized_X.count_nonzero()/len(vectorized_X.toarray())), '\n',
                 "R-squared (single run): " + str(metrics.r2_score(self.y_test, self.predictions)),
-                'Cross validation (5-fold): ' + str(self.scores),
-                "%0.2f mean with a standard deviation of %0.2f" % (self.scores.mean(), self.scores.std()), '\n',
-                "Mean squared error: " + str(metrics.mean_squared_error(self.y_test, self.predictions)), '\n',                
+                # 'Cross validation (5-fold): ' + str(self.scores['r2']),
+                "R-squared: %0.2f mean with a standard deviation of %0.2f" % (round(self.scores['test_r2'].mean(),3), round(self.scores['test_r2'].std(),3)), '\n',
+                "Mean squared error: {} with a standard deviation of {}".format(round(self.scores['test_neg_mean_squared_error'].mean(),3), round(self.scores['test_neg_mean_squared_error'].std(),3)), '\n',
+                # "Mean squared error: " + str(metrics.mean_squared_error(self.y_test, self.predictions)), '\n',                
                 "Pearson correlation coeff.:" + str(scipy.stats.pearsonr(self.y_test,self.predictions)),
                 "Spearman correlation coeff.:" + str(scipy.stats.spearmanr(self.y_test,self.predictions)),
              ]

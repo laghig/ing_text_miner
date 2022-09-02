@@ -1,21 +1,19 @@
 # Data
 Database: Eatfit  # 'OpenFoodFacts' / 'Eatfit'
+Data: 'ingr_ubp_score'  # 'ingr_ubp_score' \ 'ing_text'
 ReloadData: False # True / False
 Language: de # 'en' / 'de' / 'fr' !!! Data has to be reloaded if the language is changed !!!
 
-DataBalancing:  
-  Exe: False # True / False --> Balanced data has to adjusted as well!
-  Balancer: smote # 'None' / 'RandomUpsampling' / 'smote'
-
 # Model parameters
 ModelParameters:
-  approach:  linearReg # classification / linearReg
-  BalancedData: False # True / False
-  classifier: RandomForest # RandomForest / NaiveBayes
-  SplitSize: 0.3
-  RandomState: 4 # Integer or None
-  # FeautureExt: CountVectorizer # TfidfVectorizer / CountVectorizer
-
+  approach: regression # classification / regression
+  algorithm: KNN # REGRESSION: ridge / lasso / KNN ; CLASSIFICATION: RandomForest / NaiveBayes / KNN / DummyClassifier
+  feature_ext: tf-idf # tf-idf / count_vect        
+  DataBalancing: False # True / False
+  Balancer: KNN # 'None' / 'RandomUpsampling' / 'smote' / 'adasyn'
+  SplitSize: 0.2
+  RandomState: 11 # Integer or None
+  Hyperparameter_opt: False
 # Model modifications:
 ModelModifications:
   OnlyFive: False # True / False

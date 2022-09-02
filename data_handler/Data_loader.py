@@ -74,7 +74,7 @@ class Eatfit_data:
 
 class query_eatfit:
         """
-        Class to query the database depending on the specified parameters
+        Class to query the Eatfit database depending on the specified parameters
         """
         def __init__(self):
             pass

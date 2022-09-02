@@ -1,10 +1,8 @@
 __pycache__/*
+**/__pycache__
 config.yml
-data_handler/__pycache__/
-Code/data_handler/__pycache__/*
 open_food_facts_db/*
-Model/__pycache__/*
-Model/__pycache__/
 output/*
 eco_score/*
+interim_results/*
 

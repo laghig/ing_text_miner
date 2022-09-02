@@ -43,7 +43,7 @@ if __name__ == "__main__":
         if params['Database'] == 'Eatfit':
             column = 'text'
             # Load data from the Eatfit SQL database
-            df = query_eatfit_db.query('ingr_ubp_score', language) # 'ingr_ubp_score' \ 'ing_text'
+            df = query_eatfit_db.query(params['Data'], language) 
 
         if params['Database'] == 'OpenFoodFacts':
             # Load data from the OFF mongodb database
@@ -126,8 +126,15 @@ if __name__ == "__main__":
     model = ModelStructure(X,y, params['ModelParameters'], params['ModelModifications'])
 
     model.assemble()
-    # model.report()
+    model.report()
     # model.visualize()
+
+    # save the prediction set
+    # df = pd.DataFrame(columns=['ingredients', 'True value', 'Predictions'])
+    # df['ingredients']= model.X_test.tolist()
+    # df['True value']= model.y_test.tolist()
+    # df['Predictions']= model.predictions
+    # df.to_csv(os.getcwd() +'/interim_results/prediction_data.csv')
 
     # ----------------------- REPORT -----------------------------
 
@@ -139,22 +146,22 @@ if __name__ == "__main__":
 
     txt_block += model.txt_block
 
-    # with open(os.getcwd() + class_report_path, 'w') as f:
-    #     for txt in txt_block:
-    #         f.write(str(txt))
-    #         f.write('\n')
+    with open(os.getcwd() + class_report_path, 'w') as f:
+        for txt in txt_block:
+            f.write(str(txt))
+            f.write('\n')
 
 # --------------plots---------
 # Data distribution:
 # plot_class_count_hist(data='OFF') # Options: 'eatfit' / 'OFF'
 
 # Prediction error scatter plot
-# reg_scatter(model.y_test, model.predictions)
+reg_scatter(model.y_test, model.predictions)
 
 # Value distribution plot
 # plot_value_distribution(cleaned_dt['kg_CO2eq_pro_kg'])
 
 # Confusion Matrix
-plot_confusion_matrix(model.y_test, model.predictions)
+# plot_confusion_matrix(model.y_test, model.predictions)
 
-print("Completed successfully")
+print("*** Completed successfully ***")
