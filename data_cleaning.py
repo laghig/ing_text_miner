@@ -8,8 +8,9 @@ from nltk.stem.cistem import * # Cistem seems to be the best stemmer for the ger
 from nltk.stem.snowball import FrenchStemmer 
 
 # Own imports
-from bags_of_words import key_words, grouped_words, country_list, country_codes, add_stopwords, units
+from bags_of_words import country_list_de, country_codes_de, add_stopwords_de, units
 # nltk.download('stopwords')
+
 """
 Cleaning:
     clean_dataframe:
@@ -26,10 +27,6 @@ Cleaning:
 
 # -------- Cleaning functions ----------------
 
-def decimal_with_point(text):
-    text = re.sub('(?<=\d),(?=\d)', '.', text)
-    return text
-
 def remove_numbers(text):
     text = re.sub("\d+", "", text)
     return text
@@ -43,12 +40,16 @@ def remove_punctuation(text):
     return no_punct
 
 def remove_punct_subset(text):
-    to_delete = string.punctuation.replace(",", "").replace("()", "")
+    to_delete = string.punctuation.replace(",", "¹").replace("()", "")
     cleaned_text = text.translate(str.maketrans('', '', to_delete))
     return cleaned_text
 
 def merge_ing(text):
     text = re.sub("(?<=\w) +(?=\w+)", "", text)
+    return text
+
+def decimal_with_point(text):
+    text = re.sub('(?<=\d),(?=\d)', '.', text)
     return text
 
 def group_ing(text):
@@ -80,11 +81,11 @@ def remove_stop_words_de(text):
     # Stop words - standard dictionary
     de_stopwords = stopwords.words('german')
     # Additional stopwords
-    extra_stopwords = country_list + country_codes + add_stopwords + units
+    extra_stopwords = country_list_de + country_codes_de + add_stopwords_de + units
     de_stopwords.extend(extra_stopwords)
     
-    filtered_words = [word for word in text if word not in de_stopwords]
-    ing_list = ' '.join([str(elem) for elem in filtered_words])
+    ing_list = [word for word in text if word not in de_stopwords]
+    # ing_list = ' '.join([str(elem) for elem in filtered_words])
     return ing_list
 
 def bag_of_words_de(text):
@@ -164,7 +165,7 @@ def first_five_ing(text):
     Input: string of the ingredients text separated by comma
     Output: string with only the fist five ingredients
     """
-    text = ",".join(text.split(",",1)[:-1])
+    text = ",".join(text.split(",",5)[:-1])
     return text
 
 def text_cleaning(df, language, column, model_modifications):
@@ -193,7 +194,7 @@ def text_cleaning(df, language, column, model_modifications):
         df[column]= df[column].apply(lambda x: remove_stop_words_de(x))
         # df[column]= df[column].apply(lambda x: bag_of_words_de(x))
 
-        # df[column]=df[column].apply(lambda x: word_stemmer_de(x))
+        df[column]=df[column].apply(lambda x: word_stemmer_de(x))
 
 
         # remove the remaining punctuation
