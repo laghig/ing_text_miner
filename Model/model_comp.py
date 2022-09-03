@@ -32,6 +32,8 @@ from collections import Counter
 #from model_mod import *
 from visualization.roc_curve import roc_curve
 from data_handler.Data_balancer import *
+from visualization.reg_plots import *
+from Model.utils import *
 
 class ModelStructure:
     X_train = pd.DataFrame()
@@ -50,6 +52,7 @@ class ModelStructure:
         self.y=y
         self.modelparams = modelparams
         self.modifications = modifications
+        self.text_clf = Pipeline
 
         # self.assemble()
         # self.report()
@@ -182,10 +185,19 @@ class ModelStructure:
         # # plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\poc_components.png")
         # plt.show()
 
+
+    def visualize(self):
+        if self.modelparams['algorithm']=='ridge':
+            reg_coeff = self.text_clf['clf'].coef_.tolist()
+            print("total # of oefficient: " + str(len(reg_coeff))),
+            print("non-zero coefficients: " + str(np.count_nonzero(reg_coeff)))
+            feature_dict = self.text_clf['tfidf'].vocabulary_
+            ordered_features = dict(sorted(feature_dict.items(), key=lambda item: item[1]))
+            labeled_coeff = list(merge(ordered_features.keys(), reg_coeff))
+            labeled_coeff.sort(key=lambda i:i[1],reverse=True)
+            plot_reg_coeff(labeled_coeff[:30])
         
-        # Print the feauture of the confusion matrix
-        # print(clf.coef_.tolist())
-        # print(trsf.vocabulary_)
+
     
     def report(self):
         vectorized_X = TfidfVectorizer().fit_transform(self.X_train)

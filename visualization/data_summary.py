@@ -94,7 +94,7 @@ def plot_reg_coeff(reg_coefficients):
     plt.ylabel('Coefficients', fontsize=LabelFontSize)
     plt.tick_params(labelsize=tick_label_size)
     plt.tight_layout()
-    plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\reg_coeff_ridge.png")
+    # plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\reg_coeff_ridge.png")
     plt.show()
 
 

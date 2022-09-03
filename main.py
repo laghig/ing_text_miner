@@ -1,20 +1,18 @@
 import pandas as pd
 import datetime as dt
-from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import Counter
 
-#own imports - switch to importing all methods at once
-from data_handler.Data_loader import *
+# own imports
+from data_handler.Eatfit_Data_loader import *
 from data_handler.OFF_data_loader import *
 from data_handler.Data_balancer import *
-from data_cleaning import *
+from data_handler.data_cleaning import *
 from Model.model_comp import *
-from sklearn.neural_network import MLPRegressor
-from visualization.data_summary import plot_value_distribution, reg_scatter, plot_class_count_hist, plot_confusion_matrix
+from visualization.data_summary import *
 #from visualization.roc_curve import plot_multiclass_roc
 
 """
-Main file in which all the steps of the model are called in a successive order
+Main file in which all the model steps are called in a successive order
 """
 
 if __name__ == "__main__":
@@ -36,9 +34,8 @@ if __name__ == "__main__":
         print('Parameters file is missing.')
 
     # ------------------  DATA LOADING ------------------------
-
+    language = params['Language']
     if params['ReloadData'] is True:
-        language = params['Language']
 
         if params['Database'] == 'Eatfit':
             column = 'text'
@@ -49,7 +46,7 @@ if __name__ == "__main__":
             # Load data from the OFF mongodb database
             DOMAIN = 'localhost'
             PORT = 27017
-            column = 'ingredients_text_{}'.format(params['Language'])
+            column = 'ingredients_text_{}'.format(language)
             OFF_db = connect_mongo(DOMAIN, PORT)
             if language =='de':
                 df = query_off_data_de(OFF_db)
@@ -65,9 +62,9 @@ if __name__ == "__main__":
 
         # Drop rows without an ingredients list
         if params['Database']=='Eatfit':
-            df = clean_dataframe(df, params['Language'])
+            df = clean_dataframe(df, language)
         else:
-            df = clean_OFF_dataframe(df, params['Language'])
+            df = clean_OFF_dataframe(df, language)
 
         # #check for empty values
         # df = check_for_NaN_values(df)
@@ -77,7 +74,7 @@ if __name__ == "__main__":
         # print(text)
 
         # Clean the ingredient list text
-        cleaned_dt = text_cleaning(df, params['Language'], column, params['ModelModifications'])
+        cleaned_dt = text_cleaning(df, language, column, params['ModelModifications'])
         print('Data cleaned')
         with pd.option_context('display.max_rows', None, 'display.max_columns', None, 'display.max_colwidth', None):
             print(cleaned_dt.head())
@@ -126,8 +123,9 @@ if __name__ == "__main__":
     model = ModelStructure(X,y, params['ModelParameters'], params['ModelModifications'])
 
     model.assemble()
+    model.visualize()
     model.report()
-    # model.visualize()
+    
 
     # save the prediction set
     # df = pd.DataFrame(columns=['ingredients', 'True value', 'Predictions'])

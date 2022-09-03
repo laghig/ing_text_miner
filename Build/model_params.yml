@@ -7,13 +7,14 @@ Language: de # 'en' / 'de' / 'fr' !!! Data has to be reloaded if the language is
 # Model parameters
 ModelParameters:
   approach: regression # classification / regression
-  algorithm: KNN # REGRESSION: ridge / lasso / KNN ; CLASSIFICATION: RandomForest / NaiveBayes / KNN / DummyClassifier
+  algorithm: ridge # REGRESSION: ridge / lasso / KNN ; CLASSIFICATION: RandomForest / NaiveBayes / KNN / DummyClassifier
   feature_ext: tf-idf # tf-idf / count_vect        
   DataBalancing: False # True / False
   Balancer: KNN # 'None' / 'RandomUpsampling' / 'smote' / 'adasyn'
   SplitSize: 0.2
   RandomState: 11 # Integer or None
   Hyperparameter_opt: False
+
 # Model modifications:
 ModelModifications:
   OnlyFive: False # True / False
