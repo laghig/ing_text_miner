@@ -17,19 +17,13 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.dummy import DummyClassifier
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
-from sklearn import svm
-from sklearn.neural_network import MLPRegressor
-# from sklearn.svm import LinearSVC
 from sklearn.model_selection import cross_validate, cross_val_score, RepeatedKFold, GridSearchCV
 from sklearn import metrics
 from imblearn.over_sampling import RandomOverSampler, SMOTE, ADASYN
 from imblearn.combine import SMOTEENN
-from collections import Counter
-# from main import X
+from visualization.class_plots import plot_variance_explained
 
-
-#Own imports
-#from model_mod import *
+# Own imports
 from visualization.roc_curve import roc_curve
 from data_handler.Data_balancer import *
 from visualization.reg_plots import *
@@ -58,136 +52,89 @@ class ModelStructure:
         # self.report()
 
     def assemble(self):
+        """
+        Function to build the model pipeline, fit the model and perform hyperparameters tuning
+        """
 
-        # init_class_distribution = Counter(self.y)
-        # print(init_class_distribution)
-        # min_class_label, _ = init_class_distribution.most_common()[-4]
+        # Assembling the pipeline
+        estimators=[]
 
-        # Feauture extraction method
-        if self.modelparams['feature_ext']=='tf-idf':
-            trsf = TfidfVectorizer()
-        else:
-            trsf = CountVectorizer()
+        feature_extraction = {
+            'tf-idf': TfidfVectorizer(),
+            'count_vec': CountVectorizer()
+        }
+        estimators.append(('feat_ext', feature_extraction[self.modelparams['feature_ext']]))
 
-        # Additional transformations
-        trf = None
-        pca = None
-        NUM_COMPONENTS = 1800 # 3575
+        transformations = {
+            'var_thres': VarianceThreshold(),
+            'tr_svd': TruncatedSVD(n_components=self.modelparams['num_components'], random_state=42),
+            'pca': PCA(n_components=self.modelparams['num_components']),
+            'trf': FunctionTransformer(lambda x: x.toarray(), accept_sparse=True) # convert sparse into dense matrix
+        }
+        if self.modelparams['transformation'] is not None:
+            estimators.append(('trsf', transformations[self.modelparams['transformation']]))
 
-        # Select an algorithm
-        if self.modelparams['approach']=='classification':
-            if self.modelparams['algorithm'] == "RandomForest":
-                clf = RandomForestClassifier()
-                # trf = FunctionTransformer(lambda x: x.toarray(), accept_sparse=True)
-                # pca = PCA(n_components=NUM_COMPONENTS)
-                pca = TruncatedSVD(n_components=NUM_COMPONENTS, random_state=42)
-                pca = VarianceThreshold()
-            elif self.modelparams['algorithm'] == "NaiveBayes":
-                clf = MultinomialNB()
-            elif self.modelparams['algorithm'] == "KNN":
-                clf = KNeighborsClassifier()
-            elif self.modelparams['algorithm'] == "DummyClassifier":
-                clf = DummyClassifier()
-        if self.modelparams['approach']=='regression':
-            if self.modelparams['algorithm']=='ridge':
-                clf = Ridge(alpha=0.5, positive=True) #alpha=0.5, positive=True
-            elif self.modelparams['algorithm']=='lasso':
-                clf = Lasso(alpha=0.0004, positive=True) # alpha=0.001
-            elif self.modelparams['algorithm'] == "KNN":
-                clf = KNeighborsRegressor(leaf_size=5, n_neighbors=4, p=1) #leaf_size=1, p=2, n_neighbors=4
+        oversampler = {
+            'RandomUpsampling': RandomOverSampler(sampling_strategy='minority'),
+            'smote': SMOTE(),
 
-        
-        # Data balancing
-        over_smplr = None
+        }
         if self.modelparams['DataBalancing']== True:
-            if self.modelparams['Balancer']== 'RandomUpsampling':
-                over_smplr = RandomOverSampler(sampling_strategy='minority') # ,random_state=0
-            elif self.modelparams['Balancer']== 'smote':
-                over_smplr = SMOTE() # sampling_strategy = {'A': 800, 'B':970, 'C': 1393, 'D':847, 'E':1196}
-            elif self.modelparams['Balancer']== 'adasyn':
-                over_smplr = ADASYN()
-        
+            estimators.append(('over_smplr', oversampler[self.modelparams['Balancer']]))
+
+        classifiers = {
+            "RandomForest": RandomForestClassifier(),
+            "NaiveBayes": MultinomialNB(),
+            "KNN": KNeighborsClassifier(),
+            "DummyClassifier": DummyClassifier()
+        }
+        if self.modelparams['approach']=='classification':
+            estimators.append(('clf', classifiers[self.modelparams['algorithm']]))
+
+        regressors = {
+            'ridge': Ridge(alpha=0.5, positive=True),
+            "KNN": KNeighborsRegressor(leaf_size=5, n_neighbors=4, p=1),
+            'lasso': Lasso(alpha=0.0004, positive=True)
+        }
+        if self.modelparams['approach']=='regression':
+            estimators.append(('clf', regressors[self.modelparams['algorithm']]))
+
+        # Split the dataset in train and test samples
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=self.modelparams['SplitSize'], random_state=self.modelparams['RandomState'])
 
         # Build a Pipeline
-        estimators = [('tfidf', trsf), ('trf', trf) , ('pca', pca), ('sampler', over_smplr), ('clf', clf)]
-        # estimators = [('cv', CountVectorizer()), ('clf', clf),]
         self.text_clf = Pipeline(estimators) # some preprocessing could be avoided by adding few parameters in the model.
 
+        # data_balancing_summary(self.y, dict(self.text_clf.steps).get('sampler').sampling_strategy_)
 
-
-        
         if self.modelparams['Hyperparameter_opt']== True:
-            if self.modelparams['algorithm'] == "KNN":
-                leaf_size = list(range(1,10))
-                n_neighbors = list(range(1,10))
-                p=[1,2]
-                hyperparameters = dict(clf__leaf_size=leaf_size, clf__n_neighbors=n_neighbors, clf__p=p)
-                score = 'neg_mean_squared_error'
-            elif self.modelparams['algorithm']== "NaiveBayes":
-                hyperparameters = {
-
-                }
-            elif self.modelparams['algorithm'] == "ridge" or "lasso":
-                alphas = [0.0001, 0.0002, 0.0003, 0.0004, 0.0005]# Ridge: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.90, 1]
-                t_f = [True, False]
-                hyperparameters = dict(clf__alpha = alphas ) #clf__positive=t_f
-                score = 'neg_mean_squared_error'  # 'neg_mean_squared_error' / 'r2'
-
+            hyperparameters= get_hyperparameters(self.modelparams['algorithm'])
+            score = self.modelparams['Hyperparameter_score']
             #Use GridSearch with the previously defined classifier
             self.text_clf = GridSearchCV(self.text_clf, hyperparameters, scoring=score, cv=5)
-            #Fit the model
-        
-
-        # dummy_clf.fit(self.X_train, self.y_train)
+            
+        #Fit the model
         self.text_clf.fit(self.X_train, self.y_train)
-
-        # sampling_strategy = dict(self.text_clf.steps).get('sampler').sampling_strategy_
-        # expected_n_samples = sampling_strategy.get(min_class_label)
-        # print(f'Expected number of generated samples: {expected_n_samples}')
 
         #Print The value of best Hyperparameters
         if self.modelparams['Hyperparameter_opt']== True:
                 grid_search_results = pd.DataFrame(self.text_clf.cv_results_)
-                # grid_search_results.to_csv(r"C:\Users\Giorgio\Desktop\best_parameter.csv")
+                grid_search_results.to_csv(r"C:\Users\Giorgio\Desktop\best_parameter_multinomialnb.csv")
                 print(grid_search_results)
-            # if self.modelparams['algorithm']== "KNN":
-            #     print('Best leaf_size:', self.text_clf.best_estimator_.get_params()['leaf_size'])
-            #     print('Best p:', self.text_clf.best_estimator_.get_params()['p'])
-            #     print('Best n_neighbors:', self.text_clf.best_estimator_.get_params()['n_neighbors'])
-            # elif self.modelparams['algorithm']== "NaiveBayes":
-            #     print('Best alpha: ')
-            # elif self.modelparams['algorithm']== "ridge" or "lasso":
-            #     # print(self.text_clf.best_estimator_.get_params())
-            #     grid_search_results = pd.DataFrame(self.text_clf.cv_results_)
-            #     print(grid_search_results)
-            #     # params = pd.DataFrame([i[0] for i in self.text_clf.grid_scores_])
-            #     # results = pd.DataFrame(self.text_clf.grid_scores_)
-            #     # results = pd.concat([params, results], 1)
-            #     # results["rmse"] = np.sqrt(-results.mean_validation_score)
-            #     # print(results.head(9))
-
-
 
         # Form a prediction set
-        # self.dummy_prediction = dummy_clf.predict(self.X_test)
         self.predictions = self.text_clf.predict(self.X_test)
 
         # Print a plot of explained variance against number of components
         # variance_explained = np.cumsum(pca.explained_variance_)
-        # fig, ax = plt.subplots(figsize=(15, 8))
-        # plt.plot(range(NUM_COMPONENTS),variance_explained, color='tab:blue')
-        # ax.grid(True)
-        # plt.xlabel("Number of components", fontsize=18)
-        # plt.ylabel("Cumulative explained variance", fontsize=18)
-        # plt.tick_params(labelsize=14)
-        # plt.tight_layout()
-        # # plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\poc_components.png")
-        # plt.show()
+        # plot_variance_explained(num_components, variance_explained)
 
 
     def visualize(self):
-        if self.modelparams['algorithm']=='ridge':
+        """
+        Generate the plots specific to each model
+        """
+        if self.modelparams['algorithm']=='ridge' and ['Hyperparameter_opt']== False:
             reg_coeff = self.text_clf['clf'].coef_.tolist()
             print("total # of oefficient: " + str(len(reg_coeff))),
             print("non-zero coefficients: " + str(np.count_nonzero(reg_coeff)))
@@ -200,6 +147,9 @@ class ModelStructure:
 
     
     def report(self):
+        """
+        Generate a text report with cross-validated results
+        """
         vectorized_X = TfidfVectorizer().fit_transform(self.X_train)
 
         # Cross validation

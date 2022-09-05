@@ -1,6 +1,5 @@
 import pandas as pd
 import datetime as dt
-from collections import Counter
 
 # own imports
 from data_handler.Eatfit_Data_loader import *
@@ -9,6 +8,7 @@ from data_handler.Data_balancer import *
 from data_handler.data_cleaning import *
 from Model.model_comp import *
 from visualization.data_summary import *
+from visualization.class_plots import plot_confusion_matrix
 #from visualization.roc_curve import plot_multiclass_roc
 
 """
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     else:
         print('Parameters file is missing.')
 
-    # ------------------  DATA LOADING ------------------------
+# ------------------  DATA LOADING ------------------------
     language = params['Language']
     if params['ReloadData'] is True:
 
@@ -42,7 +42,7 @@ if __name__ == "__main__":
             # Load data from the Eatfit SQL database
             df = query_eatfit_db.query(params['Data'], language) 
 
-        if params['Database'] == 'OpenFoodFacts':
+        elif params['Database'] == 'OpenFoodFacts':
             # Load data from the OFF mongodb database
             DOMAIN = 'localhost'
             PORT = 27017
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         print('Data retrieved')
         print(df.head())
 
-    # ---------------- DATA CLEANING -------------------------
+# ---------------- DATA CLEANING -------------------------
 
         # Drop rows without an ingredients list
         if params['Database']=='Eatfit':
@@ -79,32 +79,24 @@ if __name__ == "__main__":
         with pd.option_context('display.max_rows', None, 'display.max_columns', None, 'display.max_colwidth', None):
             print(cleaned_dt.head())
 
-    # ---- outcomment to generate ingredients reports -----
-        # results = Counter()
-        # cleaned_dt['text'].str.split().apply(results.update)
-        # unique_words = sorted(list(results))
-        # results = results.most_common()
-        # unique_df = pd.DataFrame(results, columns = ['word', 'count'])
-        # unique_df.to_csv(os.getcwd() +'/interim_results/unique_ing_just_first.csv')
-        # save interim results as csv file
-        # cleaned_dt.to_csv(os.getcwd() +'/interim_results/cleaned_data.csv')
+    # ---- outcomment to generate ingredients frequncy reports -----
+        # ing_frequency_report(cleaned_dt['text'])
 
-    # ---- save interim data --------------------
+    # --------------- save interim data --------------------
         if params['Database']=='Eatfit':
             cleaned_dt.to_pickle(os.getcwd() +'/interim_results/cleaned_data.pkl')
             # cleaned_dt.to_csv(os.getcwd() +'/interim_results/cleaned_data.csv')
         else:
             cleaned_dt.to_pickle(os.getcwd() +'/interim_results/cleaned_data_OFF.pkl')
-        # another interesting option would be to_parquet
 
     else:
         if params['Database']=='Eatfit':
             cleaned_dt = pd.read_pickle(os.getcwd() +'/interim_results/cleaned_data.pkl')
         else:
             cleaned_dt = pd.read_pickle(os.getcwd() +'/interim_results/cleaned_data_OFF.pkl')
-        # cleaned_dt = pd.read_csv(os.getcwd() +'/interim_results/cleaned_data.csv')
 
-    # ------------------DATA SELECTION AND BALANCING-------------------------
+
+# --------------------DATA SELECTION AND BALANCING-------------------------
 
     if params['Database']=='Eatfit':
         if params['ModelParameters']['approach']== 'classification':
@@ -124,42 +116,36 @@ if __name__ == "__main__":
 
     model.assemble()
     model.visualize()
-    model.report()
-    
+    if params['ModelParameters']['Hyperparameter_opt'] is not True:
+        model.report()
+        # save_predictions_to_csv(model.X_test, model.y_test, model.predictions)
 
-    # save the prediction set
-    # df = pd.DataFrame(columns=['ingredients', 'True value', 'Predictions'])
-    # df['ingredients']= model.X_test.tolist()
-    # df['True value']= model.y_test.tolist()
-    # df['Predictions']= model.predictions
-    # df.to_csv(os.getcwd() +'/interim_results/prediction_data.csv')
+        # ----------------------- REPORT -----------------------------
 
-    # ----------------------- REPORT -----------------------------
+        txt_block = [
+            str("Date: " + dt.datetime.now().strftime('%d/%m/%Y %H:%M')),
+            str("Database: " + params['Database']),
+            str("Language: " + params['Language']), '\n', 
+        ]
 
-    txt_block = [
-        str("Date: " + dt.datetime.now().strftime('%d/%m/%Y %H:%M')),
-        str("Database: " + params['Database']),
-        str("Language: " + params['Language']), '\n', 
-    ]
+        txt_block += model.txt_block
 
-    txt_block += model.txt_block
-
-    with open(os.getcwd() + class_report_path, 'w') as f:
-        for txt in txt_block:
-            f.write(str(txt))
-            f.write('\n')
+        with open(os.getcwd() + class_report_path, 'w') as f:
+            for txt in txt_block:
+                f.write(str(txt))
+                f.write('\n')
 
 # --------------plots---------
 # Data distribution:
 # plot_class_count_hist(data='OFF') # Options: 'eatfit' / 'OFF'
 
 # Prediction error scatter plot
-reg_scatter(model.y_test, model.predictions)
+# reg_scatter(model.y_test, model.predictions)
 
 # Value distribution plot
 # plot_value_distribution(cleaned_dt['kg_CO2eq_pro_kg'])
 
 # Confusion Matrix
-# plot_confusion_matrix(model.y_test, model.predictions)
+plot_confusion_matrix(model.y_test, model.predictions, params['ModelParameters']['algorithm'])
 
 print("*** Completed successfully ***")

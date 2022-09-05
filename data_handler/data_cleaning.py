@@ -8,7 +8,7 @@ from nltk.stem.cistem import * # Cistem seems to be the best stemmer for the ger
 from nltk.stem.snowball import FrenchStemmer 
 
 # Own imports
-from bags_of_words import country_list_de, country_codes_de, add_stopwords_de, units
+from data_handler.bags_of_words import country_list_de, country_codes_de, add_stopwords_de, units
 # nltk.download('stopwords')
 
 """
@@ -130,6 +130,8 @@ def word_stemmer_fr(text):
 
     return words_stem
 
+# -------- Dataframe cleaning ----------------
+
 def clean_dataframe(df, language):
     # Drop empty values
     df.dropna(inplace=True)
@@ -149,7 +151,8 @@ def clean_dataframe(df, language):
         df = df[df.text != 'Keine Zutatenliste.'] 
         df = df[df.text != 'KEINE ZUTATENLISTE.']
         df = df[df.text != 'Keine.']
-        return df
+    
+    return df
 
 def clean_OFF_dataframe(df, language):
     # Drop empty values
@@ -168,7 +171,12 @@ def first_five_ing(text):
     text = ",".join(text.split(",",5)[:-1])
     return text
 
+# ------------- function calls ------------
+
 def text_cleaning(df, language, column, model_modifications):
+    """
+    Function to call the cleaning steps in a successive order
+    """
 
     if model_modifications['OnlyFive'] is True:
         df[column]= df[column].apply(lambda x: first_five_ing(x))

@@ -6,14 +6,18 @@ Language: de # 'en' / 'de' / 'fr' !!! Data has to be reloaded if the language is
 
 # Model parameters
 ModelParameters:
-  approach: regression # classification / regression
-  algorithm: ridge # REGRESSION: ridge / lasso / KNN ; CLASSIFICATION: RandomForest / NaiveBayes / KNN / DummyClassifier
-  feature_ext: tf-idf # tf-idf / count_vect        
+  approach: classification # classification / regression
+  algorithm: KNN # REGRESSION: ridge / lasso / KNN ; CLASSIFICATION: RandomForest / NaiveBayes / KNN / DummyClassifier
+  feature_ext: tf-idf # tf-idf / count_vect
+  transformation: null # 'var_thres' / 'tr_svd' / 'pca' / 'trf'  
+  num_components: 1800      
   DataBalancing: False # True / False
-  Balancer: KNN # 'None' / 'RandomUpsampling' / 'smote' / 'adasyn'
+  Balancer: None # 'None' / 'RandomUpsampling' / 'smote' / 'adasyn'
   SplitSize: 0.2
   RandomState: 11 # Integer or None
   Hyperparameter_opt: False
+  Hyperparameter_score: 'accuracy' # REGRESSION: 'neg_mean_squared_error' / 'r2'; CLASSIFICATION: 'accuracy' / 'f1' / 'balanced_accuracy'
+
 
 # Model modifications:
 ModelModifications:
