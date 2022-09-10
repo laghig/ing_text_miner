@@ -96,7 +96,7 @@ if __name__ == "__main__":
             cleaned_dt = pd.read_pickle(os.getcwd() +'/interim_results/cleaned_data_OFF.pkl')
 
 
-# --------------------DATA SELECTION AND BALANCING-------------------------
+# -------------------- DATA SELECTION -----------------------------
 
     if params['Database']=='Eatfit':
         if params['ModelParameters']['approach']== 'classification':
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     model.assemble()
     model.visualize()
     if params['ModelParameters']['Hyperparameter_opt'] is not True:
-        model.report()
+        # model.report()
         # save_predictions_to_csv(model.X_test, model.y_test, model.predictions)
 
         # ----------------------- REPORT -----------------------------
@@ -130,10 +130,10 @@ if __name__ == "__main__":
 
         txt_block += model.txt_block
 
-        with open(os.getcwd() + class_report_path, 'w') as f:
-            for txt in txt_block:
-                f.write(str(txt))
-                f.write('\n')
+        # with open(os.getcwd() + class_report_path, 'w') as f:
+        #     for txt in txt_block:
+        #         f.write(str(txt))
+        #         f.write('\n')
 
 # --------------plots---------
 # Data distribution:
@@ -146,6 +146,6 @@ if __name__ == "__main__":
 # plot_value_distribution(cleaned_dt['kg_CO2eq_pro_kg'])
 
 # Confusion Matrix
-plot_confusion_matrix(model.y_test, model.predictions, params['ModelParameters']['algorithm'])
+# plot_confusion_matrix(model.y_test, model.predictions, params['ModelParameters']['algorithm'])
 
 print("*** Completed successfully ***")

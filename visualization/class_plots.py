@@ -12,11 +12,11 @@ TitleFontSize = 18
 tick_label_size = 18
 
 model_scores = pd.DataFrame({
-    'group': ['Naive Bayes','Random Forest','k-nearest neighbour','D'],
-    '         Precision': [0.792, 0.828, 0.792, 4],
-    'Recall': [0.723, 0.81, 0.8, 34],
-    'F-1 macro          ': [0.741, 0.816, 0.792, 24],
-    'Accuracy': [0.76, 0.8948, 0.802, 14]
+    'group': ['Naive Bayes','Random Forest','k-nearest neighbour'],
+    '         Precision': [0.774, 0.828, 0.782],
+    'Recall': [0.779, 0.84, 0.759],
+    'F-1 macro          ': [0.774, 0.831, 0.738],
+    'Accuracy': [0.778, 0.839, 0.74]
     })
 
 # set the save location
@@ -24,7 +24,8 @@ model_scores = pd.DataFrame({
 cwd = os.getcwd()
 print(cwd)
 
-def plot_variance_explained(num_components, variance_explained):
+def plot_variance_explained(num_components, variance_explained, model):
+    file_name = "\output\plots\confusion_matrix_{}_{}.png".format(model, str(num_components))
     fig, ax = plt.subplots(figsize=(15, 8))
     plt.plot(range(num_components),variance_explained, color='tab:blue')
     ax.grid(True)
@@ -32,12 +33,12 @@ def plot_variance_explained(num_components, variance_explained):
     plt.ylabel("Cumulative explained variance", fontsize=LabelFontSize)
     plt.tick_params(labelsize=tick_label_size)
     plt.tight_layout()
-    # plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\poc_components.png")
+    plt.savefig(cwd + file_name)
     plt.show()
 
 def plot_confusion_matrix(Y_test, Y_preds, model):
 
-    filename = "\output\plots\confusion_matrix_{}.png".format(model)
+    filename = "\output\plots\confusion_matrix_{}_pca.png".format(model)
     classes = ['A', 'B', 'C', 'D', 'E']
     conf_mat = confusion_matrix(Y_test, Y_preds)
     #print(conf_mat)
@@ -45,8 +46,8 @@ def plot_confusion_matrix(Y_test, Y_preds, model):
     plt.matshow(conf_mat, cmap=plt.cm.Blues, fignum=1)
     plt.yticks(range(5), classes, fontsize = tick_label_size)
     plt.xticks(range(5), classes, fontsize = tick_label_size)
-    plt.title('True categories', fontsize=LabelFontSize)
-    plt.ylabel('Predicted categories', fontsize=LabelFontSize)
+    plt.title('Predicted class', fontsize=LabelFontSize)
+    plt.ylabel('True class', fontsize=LabelFontSize)
     cbar = plt.colorbar()
     cbar.ax.tick_params(labelsize=tick_label_size) ;
     
@@ -59,7 +60,6 @@ def plot_confusion_matrix(Y_test, Y_preds, model):
             else:
                 pos = i -0.22
             plt.text(pos,j+0.1, str(conf_mat[j, i]), color='black', fontsize = LabelFontSize)
-    plt.tight_layout()
     plt.savefig(cwd + filename)
     plt.show()
 

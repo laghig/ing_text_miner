@@ -30,11 +30,11 @@ def plot_reg_coeff(reg_coefficients):
 
     plt.figure(figsize=(14,7))
     plt.bar(x_pos, coef,align='center')
-    plt.xticks(x_pos, ingr, rotation=90, fontsize = tick_label_size)
+    plt.xticks(x_pos, ingr, rotation=45, horizontalalignment = 'left', fontsize = tick_label_size)
     plt.yticks(fontsize = tick_label_size)
     plt.title('Ridge regression coefficients', weight='bold', fontsize=TitleFontSize)
     plt.ylabel('Coefficients', fontsize=LabelFontSize)
     plt.tick_params(labelsize=tick_label_size)
     plt.tight_layout()
-    # plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\reg_coeff_ridge.png")
+    plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\reg_coeff_ridge_2.png")
     plt.show()

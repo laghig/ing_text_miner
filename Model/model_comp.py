@@ -1,4 +1,5 @@
 import datetime as dt
+from re import I
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,6 +28,7 @@ from visualization.class_plots import plot_variance_explained
 from visualization.roc_curve import roc_curve
 from data_handler.Data_balancer import *
 from visualization.reg_plots import *
+from visualization.roc_curve import *
 from Model.utils import *
 
 class ModelStructure:
@@ -65,9 +67,12 @@ class ModelStructure:
         }
         estimators.append(('feat_ext', feature_extraction[self.modelparams['feature_ext']]))
 
+        if self.modelparams['transformation'] == 'pca':
+            estimators.append(('to_dense', FunctionTransformer(lambda x: x.toarray(), accept_sparse=True)))
+
         transformations = {
             'var_thres': VarianceThreshold(),
-            'tr_svd': TruncatedSVD(n_components=self.modelparams['num_components'], random_state=42),
+            'tr_svd': TruncatedSVD(n_components=self.modelparams['num_components']),
             'pca': PCA(n_components=self.modelparams['num_components']),
             'trf': FunctionTransformer(lambda x: x.toarray(), accept_sparse=True) # convert sparse into dense matrix
         }
@@ -76,7 +81,7 @@ class ModelStructure:
 
         oversampler = {
             'RandomUpsampling': RandomOverSampler(sampling_strategy='minority'),
-            'smote': SMOTE(),
+            'smote': SMOTE(k_neighbors=3),
 
         }
         if self.modelparams['DataBalancing']== True:
@@ -84,8 +89,8 @@ class ModelStructure:
 
         classifiers = {
             "RandomForest": RandomForestClassifier(),
-            "NaiveBayes": MultinomialNB(),
-            "KNN": KNeighborsClassifier(),
+            "NaiveBayes": MultinomialNB(alpha=0.1),
+            "KNN": KNeighborsClassifier(leaf_size=6, n_neighbors=3, p=2),
             "DummyClassifier": DummyClassifier()
         }
         if self.modelparams['approach']=='classification':
@@ -109,6 +114,7 @@ class ModelStructure:
 
         if self.modelparams['Hyperparameter_opt']== True:
             hyperparameters= get_hyperparameters(self.modelparams['algorithm'])
+            print(hyperparameters)
             score = self.modelparams['Hyperparameter_score']
             #Use GridSearch with the previously defined classifier
             self.text_clf = GridSearchCV(self.text_clf, hyperparameters, scoring=score, cv=5)
@@ -125,24 +131,31 @@ class ModelStructure:
         # Form a prediction set
         self.predictions = self.text_clf.predict(self.X_test)
 
-        # Print a plot of explained variance against number of components
-        # variance_explained = np.cumsum(pca.explained_variance_)
-        # plot_variance_explained(num_components, variance_explained)
-
 
     def visualize(self):
         """
         Generate the plots specific to each model
         """
-        if self.modelparams['algorithm']=='ridge' and ['Hyperparameter_opt']== False:
+        if self.modelparams['algorithm']=='ridge':
             reg_coeff = self.text_clf['clf'].coef_.tolist()
             print("total # of oefficient: " + str(len(reg_coeff))),
             print("non-zero coefficients: " + str(np.count_nonzero(reg_coeff)))
-            feature_dict = self.text_clf['tfidf'].vocabulary_
+            feature_dict = self.text_clf['feat_ext'].vocabulary_
             ordered_features = dict(sorted(feature_dict.items(), key=lambda item: item[1]))
             labeled_coeff = list(merge(ordered_features.keys(), reg_coeff))
             labeled_coeff.sort(key=lambda i:i[1],reverse=True)
             plot_reg_coeff(labeled_coeff[:30])
+
+        if self.modelparams['transformation']=='pca':
+            # Print a plot of explained variance against number of components
+            variance_explained = np.cumsum(self.text_clf['trsf'].explained_variance_)
+            plot_variance_explained(self.modelparams['num_components'], variance_explained, self.modelparams['algorithm'])
+        
+        if self.modelparams['approach']=='classification':
+            i = 2 if self.modelparams['DataBalancing'] is True else 1
+            classes = ['A', 'B', 'C', 'D', 'E']
+            # roc_curve_comp(self.text_clf[:-i], self.X, self.y, classes, self.modelparams['DataBalancing'])
+            multiclass_roc_curve(self.text_clf[:-i],self.modelparams['algorithm'], self.X, self.y, classes, self.modelparams['DataBalancing'], 'single')
         
 
     
@@ -159,7 +172,6 @@ class ModelStructure:
             scoring= ['r2', 'neg_mean_squared_error']
         cv =  RepeatedKFold(n_splits=5, n_repeats=5, random_state=self.modelparams['RandomState'])
         self.scores = cross_validate(self.text_clf, self.X, self.y, cv=cv, scoring=scoring)
-        # self.dummy_scores = cross_validate(dummy_clf, self.X, self.y, cv=5, scoring=scoring)
         # print(self.scores.keys())
 
 
@@ -204,33 +216,8 @@ class ModelStructure:
                 # 'Cross validation (5-fold): ' + str(self.scores['r2']),
                 "R-squared: %0.2f mean with a standard deviation of %0.2f" % (round(self.scores['test_r2'].mean(),3), round(self.scores['test_r2'].std(),3)), '\n',
                 "Mean squared error: {} with a standard deviation of {}".format(round(self.scores['test_neg_mean_squared_error'].mean(),3), round(self.scores['test_neg_mean_squared_error'].std(),3)), '\n',
-                # "Mean squared error: " + str(metrics.mean_squared_error(self.y_test, self.predictions)), '\n',                
+                # "Mean squared error: " + str(metrics.mean_squared_error(self.y_test, self.predictions)), '\n',
+                'Almost Correct Predictions Error Rate: ' + str(sum(acper(self.y_test,self.predictions))/len(self.y_test)), '\n',
                 "Pearson correlation coeff.:" + str(scipy.stats.pearsonr(self.y_test,self.predictions)),
                 "Spearman correlation coeff.:" + str(scipy.stats.spearmanr(self.y_test,self.predictions)),
              ]
-        
-
-    # def visualize(self):
-
-    #     plt.figure()
-    #     models = [self.dummy_clf, self.text_clf]
-    #     for mod in models:
-    #         y_pred = mod.predict_proba(self.X_test)[:, 1]
-    #         fpr, tpr, _ = metrics.roc_curve(self.y_test, y_pred)
-    #         auc = round(metrics.roc_auc_score(self.y_test, y_pred), 4)
-    #         plt.plot(fpr,tpr,label= str(mod) + ", AUC="+str(auc))
-
-    #     lw=1
-    #     plt.plot([0, 1], [0, 1], "k--", lw=lw)
-    #     plt.xlim([0.0, 1.0])
-    #     plt.ylim([0.0, 1.05])
-    #     plt.xlabel("False Positive Rate")
-    #     plt.ylabel("True Positive Rate")
-    #     plt.title("Multiclass ROC curve", weight='bold')
-    #     plt.legend(loc="lower right")
-    #     #plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\roc_curve.jpg") # uncomment to save the plot
-    #     plt.show
-
-
-if __name__ == "__main__":
-    print('hello')
