@@ -1,0 +1,26 @@
+# Data
+Database: Eatfit  # 'OpenFoodFacts' / 'Eatfit'
+Data: 'ingr_ubp_score'  # 'ingr_ubp_score' \ 'ing_text'
+ReloadData: False # True / False
+Language: de # 'en' / 'de' / 'fr' !!! Data has to be reloaded if the language is changed !!!
+
+# Model parameters
+ModelParameters:
+  approach: classification # classification / regression
+  algorithm: NaiveBayes # REGRESSION: ridge / lasso / KNN ; CLASSIFICATION: RandomForest / NaiveBayes / KNN / DummyClassifier
+  feature_ext: tf-idf # tf-idf / count_vect
+  transformation: 'var_thres' # null / 'var_thres' / 'tr_svd' / 'pca' / 'trf'  
+  num_components: null  # max: 3124  
+  DataBalancing: True # True / False
+  Balancer: smote # 'None' / 'RandomUpsampling' / 'smote' / 'adasyn'
+  SplitSize: 0.2
+  RandomState: 11 # Integer or None
+  Hyperparameter_opt: False
+  Hyperparameter_score: 'accuracy' # REGRESSION: 'neg_mean_squared_error' / 'r2'; CLASSIFICATION: 'accuracy' / 'f1' / 'balanced_accuracy'
+
+
+# Model modifications:
+ModelModifications:
+  OnlyFive: False # True / False
+
+
