@@ -1,6 +1,6 @@
 # Environmental score predictor for food products
 
-This application uses natural language processing and machine learning to predict the environmental footprint of food products based on packaging information. The environmental impact can be estimated with both regression and classification models. The main purpose of the project was to automate the classification of food products in a no front-of-package label scheme.
+This application uses natural language processing and machine learning to predict the environmental footprint of food products based on packaging information. The environmental impact can be estimated with both regression and classification models. The main purpose of the project was to automate the classification of food products in a front-of-package label scheme.
 
 ## Setup
 ### Data
@@ -21,9 +21,7 @@ venv\Scripts\activate # Windows command
 pip install -r requirements.txt
 ```
 - Authentication credentials must be added in a separate config.yml file in the Build directory.
-
-**Data cleaning**:
-nltk require an additional file to remove stop words from text. This file is available here https://www.nltk.org/nltk_data/ as Stopwords Corpus. Otherwise, the Stopword corpus can also be directly downloaded using the NLTK corpus downloader:
+- NLTK require an additional file to remove stop words from text. This file is available here https://www.nltk.org/nltk_data/ as Stopwords Corpus. Otherwise, the Stopword corpus can also be directly downloaded using the NLTK corpus downloader:
 ```
 nltk.download('stopwords')
 ``` 
