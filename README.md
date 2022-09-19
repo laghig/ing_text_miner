@@ -13,30 +13,17 @@ Database connection:
 - The Eatfit database was queried as a MySQLConnection object on the local server
 
 ### Installation
-- clone this directory
-- create a new virtual environment:
+- Create a new virtual environment and install the required libraries
 ```
 python -m venv venvname
-```
-- activate the virtual environment
-```
-Linux:
-source bin/activate 
-
-Windows:
-venv\Scripts\activate
-```
-- install the required libraries:
-```
+source bin/activate # Linux command
+venv\Scripts\activate # Windows command
 pip install -r requirements.txt
 ```
 - Authentication credentials must be added in a separate config.yml file in the Build directory.
 
 **Data cleaning**:
-
-nltk require an additional file to remove stop words from text. This file is available here https://www.nltk.org/nltk_data/ as Stopwords Corpus.
-
-The Stopword corpus can also be directly downloaded using the NLTK corpus downloader:
+nltk require an additional file to remove stop words from text. This file is available here https://www.nltk.org/nltk_data/ as Stopwords Corpus. Otherwise, the Stopword corpus can also be directly downloaded using the NLTK corpus downloader:
 ```
 nltk.download('stopwords')
 ``` 
