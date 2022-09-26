@@ -9,16 +9,10 @@ LabelFontSize = 22
 TitleFontSize = 18
 tick_label_size = 18
 
-def plot_class_count_hist(data):
-    path = r"C:\Users\Giorgio\Desktop\ETH\Code\interim_results\cleaned_data.pkl"
-    # os.chdir(path)
-    # Data location
-    # eatfit_path = os.path.join(os.getcwd(),'\interim_results\cleaned_data.pkl') # 
-    # OFF_path = os.path.join(os.getcwd(),'/interim_results/cleaned_data_OFF.pkl')
-    # print(eatfit_path)
+cwd = os.getcwd()
 
-    # Load the cleaned dataset
-    df = pd.read_pickle(path)
+def plot_class_count_hist(df, data):
+    file_name = "\output\plots\class_distribution_{}.png".format(data)
 
     if data == 'eatfit':
         class_count = df.groupby('co2_score')['co2_score'].count()
@@ -33,19 +27,34 @@ def plot_class_count_hist(data):
     plt.title('Data distribution', weight='bold', fontsize=TitleFontSize)
     plt.tick_params(labelsize=LabelFontSize)
     plt.tight_layout()
-    # plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\class_distribution_OFF.png") # uncomment to save the plot 
+    # plt.savefig(cwd + file_name) # uncomment to save the plot 
     plt.show()
 
 def plot_value_distribution(x):
+    file_name = "/output/plots/gwp_value_distribution.png"
     plt.figure(figsize=(16,7))
     plt.hist(x, bins=120, rwidth=0.9)
-    plt.xlim(0,round(x.max())+1)
-    plt.xlabel('GWP [Kg$CO_{2}$eq./kg]', fontsize=LabelFontSize)
+    plt.xlim(0,round(x.max())+1) 
+    plt.xlabel('GWP [Kg$CO_{2}$eq./kg]', fontsize=LabelFontSize) # GWP [Kg$CO_{2}$eq./kg] / Umweltbelastungspunkte [UBP/kg]
     plt.ylabel('Occurrence', fontsize=LabelFontSize)
     plt.title('Value distribution', weight='bold', fontsize=TitleFontSize)
     plt.tick_params(labelsize=tick_label_size)
     plt.tight_layout()
-    plt.savefig(r"C:\Users\Giorgio\Desktop\ETH\Code\output\plots\CO2_value_distribution.png") # uncomment to save the plot 
+    plt.savefig(cwd + file_name) # uncomment to save the plot 
+    plt.show()
+
+def categories_dist_barplot(x):
+    file_name = "\output\plots\class_distribution_Eatfit.png"
+    class_count = df.groupby('major_category_id')['major_category_id'].count()
+    plt.figure(figsize=(16,7))
+    class_count.plot.bar()
+    plt.xticks(rotation=0)
+    plt.xlabel('Categories', fontsize=LabelFontSize)
+    plt.ylabel('Occurrence', fontsize=LabelFontSize)
+    plt.title('Categories distribution', weight='bold', fontsize=TitleFontSize)
+    plt.tick_params(labelsize=LabelFontSize)
+    plt.tight_layout()
+    plt.savefig(cwd + file_name) # uncomment to save the plot 
     plt.show()
 
 def ing_frequency_report(text):
@@ -65,28 +74,28 @@ def save_predictions_to_csv(X,y,predictions):
     df['ingredients']= X.tolist()
     df['True value']= y.tolist()
     df['Predictions']= predictions
-    df.to_csv(os.getcwd() +'/interim_results/prediction_data.csv')
-
+    df.to_csv(cwd +'/interim_results/prediction_data.csv')
 
 if __name__ == "__main__":
 
-    # print(os.getcwd())
 
-    # plot_class_count_hist(data='eatfit')
-
-    path = r"C:\Users\Giorgio\Desktop\ETH\Code\interim_results\cleaned_data.pkl"
-
+    path = cwd +'\interim_results\cleaned_data.pkl'
+    
     # Load the cleaned dataset
     df = pd.read_pickle(path)
-    x=df['kg_CO2eq_pro_kg']
-    
-    # Uncomment to plot the class distribution
-    # plot_class_count_hist('eatfit')
 
-    # Uncomment to plot the continuous data distribution
+    # Plot the class distribution
+    # plot_class_count_hist(df, 'eatfit')
+
+    # Plot the continuous data distribution
+    x=df['kg_CO2eq_pro_kg'] # 'ubp_pro_kg' / 'kg_CO2eq_pro_kg'
     # plot_value_distribution(x)
 
+    # Plot the categories distribution
+    # categories_dist_barplot(df)
+
     # DESCRIPTIVE STATISTICS FOR THE CLASSIFICATION SCHEME
+    # x=df['ubp_pro_kg']
     # print(x.quantile(0.2))
     # max = int(x.max())
     # step=int(x.max()/6)

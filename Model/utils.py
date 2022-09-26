@@ -27,10 +27,10 @@ def get_hyperparameters(algo):
     Selects the desired hyperparameters given the algoritm
     """
     # KNN
-    leaf_size = list(range(1,10))
+    # leaf_size = list(range(1,10))
     n_neighbors = list(range(1,10))
-    p=[1,2]
-    KNN = dict(clf__leaf_size=leaf_size, clf__n_neighbors=n_neighbors, clf__p=p)
+    # p=[1,2]
+    KNN = dict( clf__n_neighbors=n_neighbors) # , clf__p=p, clf__leaf_size=leaf_size,
 
     # Ridge and lasso regression
     alphas_l = [0.0001, 0.0002, 0.0003, 0.0004, 0.0005]
@@ -69,6 +69,16 @@ def acper(y_true, y_pred):
         else:
           yield False
 
+def check_for_NaN_values(df):
+    print("\n The following number of cells are empty")
+    print(df.isnull().sum())
+    return df
+
+def eatfit_data_summary(df):
+    # print some information about the data
+    text =  " \n The number of entries are: " + str(len(df)) + "\n" 
+            # "Nutri-score rating distribution across the dataset:" + str(df['nutri_score_calculated'].value_counts())
+    return text
 
 def get_correlation(data, threshold):
     corr_col = set()

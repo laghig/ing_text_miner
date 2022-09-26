@@ -4,12 +4,12 @@ import datetime as dt
 # own imports
 from data_handler.Eatfit_Data_loader import *
 from data_handler.OFF_data_loader import *
-from data_handler.Data_balancer import *
 from data_handler.data_cleaning import *
 from Model.model_comp import *
 from visualization.data_summary import *
 from visualization.class_plots import plot_confusion_matrix
-#from visualization.roc_curve import plot_multiclass_roc
+from Model.utils import eatfit_data_summary, check_for_NaN_values
+
 
 """
 Main file in which all the model steps are called in a successive order
@@ -17,7 +17,7 @@ Main file in which all the model steps are called in a successive order
 
 if __name__ == "__main__":
 
-    #set the working directory
+    # set the working directory
     path = r"C:\Users\Giorgio\Desktop\ETH\Code"
     os.chdir(path)
 
@@ -61,10 +61,7 @@ if __name__ == "__main__":
 # ---------------- DATA CLEANING -------------------------
 
         # Drop rows without an ingredients list
-        if params['Database']=='Eatfit':
-            df = clean_dataframe(df, language)
-        else:
-            df = clean_OFF_dataframe(df, language)
+        df = clean_dataframe(df, params['Database'], language)
 
         # #check for empty values
         # df = check_for_NaN_values(df)
@@ -97,14 +94,16 @@ if __name__ == "__main__":
 
 
 # -------------------- DATA SELECTION -----------------------------
+    # filter data above a certain threshold
+    # cleaned_dt = cleaned_dt[cleaned_dt['kg_CO2eq_pro_kg'] <= 10]
 
     if params['Database']=='Eatfit':
         if params['ModelParameters']['approach']== 'classification':
             X = cleaned_dt['text']
-            y = cleaned_dt['co2_score']
+            y = cleaned_dt['co2_score'] # ,'major_category_id' co2_score / ubp_score
         elif params['ModelParameters']['approach']== 'regression':
             X = cleaned_dt['text']
-            y = cleaned_dt['kg_CO2eq_pro_kg']
+            y = cleaned_dt['kg_CO2eq_pro_kg'] # kg_CO2eq_pro_kg / ubp_pro_kg
     else:
         X = cleaned_dt['ingredients_text_{}'.format(params['Language'])]
         y = cleaned_dt['ecoscore_grade']
@@ -115,9 +114,9 @@ if __name__ == "__main__":
     model = ModelStructure(X,y, params['ModelParameters'], params['ModelModifications'])
 
     model.assemble()
-    model.visualize()
+    # model.visualize()
     if params['ModelParameters']['Hyperparameter_opt'] is not True:
-        # model.report()
+        model.report()
         # save_predictions_to_csv(model.X_test, model.y_test, model.predictions)
 
         # ----------------------- REPORT -----------------------------
@@ -130,17 +129,17 @@ if __name__ == "__main__":
 
         txt_block += model.txt_block
 
-        # with open(os.getcwd() + class_report_path, 'w') as f:
-        #     for txt in txt_block:
-        #         f.write(str(txt))
-        #         f.write('\n')
+        with open(os.getcwd() + class_report_path, 'w') as f:
+            for txt in txt_block:
+                f.write(str(txt))
+                f.write('\n')
 
 # --------------plots---------
 # Data distribution:
 # plot_class_count_hist(data='OFF') # Options: 'eatfit' / 'OFF'
 
 # Prediction error scatter plot
-# reg_scatter(model.y_test, model.predictions)
+# reg_scatter(model.y_test, model.predictions, params['ModelParameters']['algorithm'])
 
 # Value distribution plot
 # plot_value_distribution(cleaned_dt['kg_CO2eq_pro_kg'])

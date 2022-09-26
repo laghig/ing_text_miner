@@ -8,7 +8,7 @@ from nltk.stem.cistem import * # Cistem seems to be the best stemmer for the ger
 from nltk.stem.snowball import FrenchStemmer 
 
 # Own imports
-from data_handler.bags_of_words import country_list_de, country_codes_de, add_stopwords_de, units
+from data_handler.bags_of_words import *
 # nltk.download('stopwords')
 
 """
@@ -25,7 +25,32 @@ Cleaning:
         stemming -> language dependency: en, de, fr
 """
 
-# -------- Cleaning functions ----------------
+# ---------- Dataframe Cleaning ----------------
+
+def clean_dataframe(df, db, language):
+    std_text = {
+        'en': ['-', 'Product information’s are not available in English'],
+        'de': ['-', 'Produkt', 'Keine Zutatenliste', 'Keine Zutatenliste.', 'KEINE ZUTATENLISTE.', 'Keine.'],
+        'fr': ['-', 'Produkt']
+    }
+
+    if db =='Eatfit':
+        # Drop empty values
+        df.dropna(inplace=True)
+        # Other deletions:
+        for x in std_text[language]:
+            df = df[df.text != x]
+    else:
+        # Drop empty rows
+        df.dropna(subset=['ingredients_text_{}'.format(language), 'ecoscore_grade'],inplace=True)
+        # Other deletions
+        std_text = ['unknown', 'not-applicable']
+        for x in std_text:
+            df = df[df.ecoscore_grade != x]
+    
+    return df
+
+# ---------- Text Cleaning functions ----------------
 
 def remove_numbers(text):
     text = re.sub("\d+", "", text)
@@ -33,6 +58,10 @@ def remove_numbers(text):
 
 def replace_brackets(text):
     text = str(text).replace("(", ", ").replace(")", " ,")
+    return text
+
+def remove_superscript(text):
+    text = ''.join([i for i in text if ord(i) < 128])
     return text
 
 def remove_punctuation(text):
@@ -52,10 +81,15 @@ def decimal_with_point(text):
     text = re.sub('(?<=\d),(?=\d)', '.', text)
     return text
 
+# ---------- Grouping, stemming, ... -----------------
+
 def group_ing(text):
+    """
+    Group synonyms using reverse dictionary mapping
+    """
     swapped_word_list = {
         word: replacement
-        for replacement, words in grouped_words.items()
+        for replacement, words in grouped_words_de.items()
         for word in words
     }
 
@@ -66,156 +100,76 @@ def group_ing(text):
     
     return new_text
 
-def remove_stop_words_en(text):
-    # Stop words - standard dictionary
-    en_stopwords = stopwords.words('english')
+def remove_stop_words(text, language):
+    if language == 'de':
+        # Stop words - standard dictionary
+        std_stopwords = stopwords.words('german')
+        # Additional stopwords
+        ing_stopwords = country_list_de + country_codes_de + add_stopwords_de + units
+    elif language == 'en':
+        std_stopwords = stopwords.words('english')
+        ing_stopwords = country_list_en + country_codes_en + add_stopwords_en + units
+    else:
+        std_stopwords = stopwords.words('french')
+        ing_stopwords = ['Ingrédients', 'ingrédient', 'Produkt',]
 
-    # Ingredients list- specific additions
-    en_stopwords.extend(['ingredients', 'emulsifiers'])
+    std_stopwords.extend(ing_stopwords)
+    ing_list = [word for word in text if word not in std_stopwords]
 
-    filtered_words = [word for word in text if word not in en_stopwords]
-
-    return filtered_words
-
-def remove_stop_words_de(text):
-    # Stop words - standard dictionary
-    de_stopwords = stopwords.words('german')
-    # Additional stopwords
-    extra_stopwords = country_list_de + country_codes_de + add_stopwords_de + units
-    de_stopwords.extend(extra_stopwords)
-    
-    ing_list = [word for word in text if word not in de_stopwords]
-    # ing_list = ' '.join([str(elem) for elem in filtered_words])
     return ing_list
 
 def bag_of_words_de(text):
-
+    """
+    Delete all the words not included in the key_words list
+    """
+    # Add the key_words list in the bag_of_words script
     filtered_words = [word for word in text if word in key_words]
     ing_list = ' '.join([str(elem) for elem in filtered_words])
+
     return ing_list
 
-def remove_superscript(text):
-    text = ''.join([i for i in text if ord(i) < 128])
-    return text
+def word_stemmer(text, language):
+    stemmers = {
+        'en': PorterStemmer(),
+        'de': Cistem(),
+        'fr': FrenchStemmer()
+    }
 
-def remove_stop_words_fr(text):
-    # Stop words - standard dictionary
-    fr_stopwords = stopwords.words('french')
-
-    # Ingredients list- specific additions
-    fr_stopwords.extend(['Ingrédients', 'ingrédient', 'Produkt',])
-
-    filtered_words = [word for word in text if word not in fr_stopwords]
-
-    return filtered_words
-
-def word_stemmer_de(text):
-
-    stemmer = Cistem()
+    stemmer = stemmers[language]
     words_stem = " ".join([stemmer.stem(word) for word in text])
 
     return words_stem
 
-def word_stemmer_en(text):
+# ---------- Other functions ----------------
 
-    stemmer = PorterStemmer()   
-    words_stem = " ".join([stemmer.stem(word) for word in text])
-
-    return words_stem
-
-def word_stemmer_fr(text):
-
-    stemmer = FrenchStemmer()   
-    words_stem = " ".join([stemmer.stem(word) for word in text])
-
-    return words_stem
-
-# -------- Dataframe cleaning ----------------
-
-def clean_dataframe(df, language):
-    # Drop empty values
-    df.dropna(inplace=True)
-
-    # Other deletions:
-    df = df[df.text != '-']
-
-    if language == 'en':
-        df = df[df.text != 'Product information’s are not available in English']
-
-    if language == 'fr':
-        df = df[df.text != 'Produkt'] # add here all prod_id with the text in german
-
-    if language == 'de':
-        df = df[df.text != 'Produkt']
-        df = df[df.text != 'Keine Zutatenliste']
-        df = df[df.text != 'Keine Zutatenliste.'] 
-        df = df[df.text != 'KEINE ZUTATENLISTE.']
-        df = df[df.text != 'Keine.']
-    
-    return df
-
-def clean_OFF_dataframe(df, language):
-    # Drop empty values
-    df.dropna(subset=['ingredients_text_{}'.format(language), 'ecoscore_grade'],inplace=True)
-    
-    # Other deletions
-    df = df[df.ecoscore_grade != 'unknown'] 
-    df = df[df.ecoscore_grade != 'not-applicable']
-    return df
-
-def first_five_ing(text):
+def first_ing(text, splits):
     """
     Input: string of the ingredients text separated by comma
-    Output: string with only the fist five ingredients
+    Output: string with only the fist x ingredients
     """
-    text = ",".join(text.split(",",5)[:-1])
+    text = ",".join(text.split(",",splits)[:-1])
     return text
 
-# ------------- function calls ------------
+# ------------- Pre-processing pipeline ------------
 
 def text_cleaning(df, language, column, model_modifications):
     """
-    Function to call the cleaning steps in a successive order
+    Function to call the pre-processing steps in a successive order
     """
 
-    if model_modifications['OnlyFive'] is True:
-        df[column]= df[column].apply(lambda x: first_five_ing(x))
+    if model_modifications['first_x_ing'] is True:
+        df[column]= df[column].apply(lambda x: first_ing(x, model_modifications['x']))
 
     df[column] = df[column].apply(lambda x: replace_brackets(x))
-    
-    # remove punctuation
-    df[column] = df[column].apply(lambda x: remove_punct_subset(x))
-    
-    # remove numbers
-    df[column] = df[column].apply(lambda x: remove_numbers(x))
-
-    # Tokenization an lower case only
-    df[column]= df[column].apply(lambda x: word_tokenize(x.lower()))
-
-    if language == 'en':
-        # Filter out stop words
-        df[column]= df[column].apply(lambda x: remove_stop_words_en(x))
-        #Stemming
-        df[column]=df[column].apply(lambda x: word_stemmer_en(x))
-    
-    if language == 'de':
-        df[column]= df[column].apply(lambda x: remove_stop_words_de(x))
-        # df[column]= df[column].apply(lambda x: bag_of_words_de(x))
-
-        df[column]=df[column].apply(lambda x: word_stemmer_de(x))
-
-
-        # remove the remaining punctuation
-        df[column] = df[column].apply(lambda x: remove_punctuation(x))
-        # df[column]=df[column].apply(lambda x: group_ing(x))
-         
-    
-    if language == 'fr':
-        df[column]= df[column].apply(lambda x: remove_stop_words_fr(x))
-        df[column]=df[column].apply(lambda x: word_stemmer_fr(x))
-
-    # Merge ingredients comoosed by multiple words
-    # df[column] = df[column].apply(lambda x: merge_ing(x))
+    df[column] = df[column].apply(lambda x: remove_punct_subset(x)) # remove punctuation except ','
+    df[column] = df[column].apply(lambda x: remove_numbers(x))  # remove numbers
+    df[column]= df[column].apply(lambda x: word_tokenize(x.lower())) # tokenization and lower case only
+    df[column]= df[column].apply(lambda x: remove_stop_words(x, language)) # stopwords
+    # df[column]= df[column].apply(lambda x: bag_of_words_de(x)) # bag of words
+    df[column]=df[column].apply(lambda x: word_stemmer(x, language)) # stemming
+    # df[column] = df[column].apply(lambda x: merge_ing(x)) # merge
+    df[column] = df[column].apply(lambda x: remove_punctuation(x)) # comma
+    # df[column]=df[column].apply(lambda x: group_ing(x)) # grouping
 
     return df
 
@@ -223,19 +177,18 @@ if __name__ == "__main__":
     
     # TEST
     # random_text = " sugar, palm oil, hazelnuts 13%, skimmed milk powder 8,7%, lean cocoa is 7,4%, emulsifiers : lecithins [soy] , vanillin,"
-
     # clean_text = remove_punctuation(random_text)
     # print(clean_text)
     # clean_text=word_tokenize(clean_text.lower())
     # print(clean_text)
-    # clean_text=remove_stop_words_en(clean_text)
+    # clean_text=remove_stop_words(clean_text, 'en')
     # print(clean_text)
-    # clean_text=word_stemmer_en(clean_text)
+    # clean_text=word_stemmer(clean_text, 'en')
     # print(clean_text)
 
     # Model/text Modifications:
     # clean= decimal_with_point(rnd_text)
-    # print(first_five_ing(clean))
+    # print(first_ing(clean))
 
     clean = group_ing('biovollmilch pasteurisier lacto schweiz bergmilch biorahm schweiz salz jodfluorfrei schweiz sauerung')
     print(clean)

@@ -20,13 +20,12 @@ from sklearn.dummy import DummyClassifier
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.model_selection import cross_validate, cross_val_score, RepeatedKFold, GridSearchCV
 from sklearn import metrics
-from imblearn.over_sampling import RandomOverSampler, SMOTE, ADASYN
+from imblearn.over_sampling import RandomOverSampler, SMOTE
 from imblearn.combine import SMOTEENN
 from visualization.class_plots import plot_variance_explained
 
 # Own imports
 from visualization.roc_curve import roc_curve
-from data_handler.Data_balancer import *
 from visualization.reg_plots import *
 from visualization.roc_curve import *
 from Model.utils import *
@@ -71,7 +70,7 @@ class ModelStructure:
             estimators.append(('to_dense', FunctionTransformer(lambda x: x.toarray(), accept_sparse=True)))
 
         transformations = {
-            'var_thres': VarianceThreshold(),
+            'var_thres': VarianceThreshold(threshold=0.002),
             'tr_svd': TruncatedSVD(n_components=self.modelparams['num_components']),
             'pca': PCA(n_components=self.modelparams['num_components']),
             'trf': FunctionTransformer(lambda x: x.toarray(), accept_sparse=True) # convert sparse into dense matrix
@@ -82,6 +81,7 @@ class ModelStructure:
         oversampler = {
             'RandomUpsampling': RandomOverSampler(sampling_strategy='minority'),
             'smote': SMOTE(k_neighbors=3),
+            'smoteenn': SMOTEENN(),
 
         }
         if self.modelparams['DataBalancing']== True:
@@ -97,9 +97,9 @@ class ModelStructure:
             estimators.append(('clf', classifiers[self.modelparams['algorithm']]))
 
         regressors = {
-            'ridge': Ridge(alpha=0.5, positive=True),
+            'ridge': Ridge(alpha=0.5 ), # positive=True
             "KNN": KNeighborsRegressor(leaf_size=5, n_neighbors=4, p=1),
-            'lasso': Lasso(alpha=0.0004, positive=True)
+            'lasso': Lasso(alpha=0.0004) # , positive=True
         }
         if self.modelparams['approach']=='regression':
             estimators.append(('clf', regressors[self.modelparams['algorithm']]))
@@ -125,18 +125,17 @@ class ModelStructure:
         #Print The value of best Hyperparameters
         if self.modelparams['Hyperparameter_opt']== True:
                 grid_search_results = pd.DataFrame(self.text_clf.cv_results_)
-                grid_search_results.to_csv(r"C:\Users\Giorgio\Desktop\best_parameter_multinomialnb.csv")
+                grid_search_results.to_csv(r"C:\Users\Giorgio\Desktop\best_parameter_knn_regressor.csv")
                 print(grid_search_results)
 
         # Form a prediction set
         self.predictions = self.text_clf.predict(self.X_test)
 
-
     def visualize(self):
         """
         Generate the plots specific to each model
         """
-        if self.modelparams['algorithm']=='ridge':
+        if self.modelparams['algorithm']=='ridge' or self.modelparams['algorithm']=='lasso':
             reg_coeff = self.text_clf['clf'].coef_.tolist()
             print("total # of oefficient: " + str(len(reg_coeff))),
             print("non-zero coefficients: " + str(np.count_nonzero(reg_coeff)))
@@ -144,7 +143,7 @@ class ModelStructure:
             ordered_features = dict(sorted(feature_dict.items(), key=lambda item: item[1]))
             labeled_coeff = list(merge(ordered_features.keys(), reg_coeff))
             labeled_coeff.sort(key=lambda i:i[1],reverse=True)
-            plot_reg_coeff(labeled_coeff[:30])
+            plot_reg_coeff(labeled_coeff[:30], self.modelparams['algorithm'])
 
         if self.modelparams['transformation']=='pca':
             # Print a plot of explained variance against number of components
@@ -173,7 +172,6 @@ class ModelStructure:
         cv =  RepeatedKFold(n_splits=5, n_repeats=5, random_state=self.modelparams['RandomState'])
         self.scores = cross_validate(self.text_clf, self.X, self.y, cv=cv, scoring=scoring)
         # print(self.scores.keys())
-
 
         # Assemble the report layout
         if self.modelparams['approach'] == "classification":
@@ -205,6 +203,8 @@ class ModelStructure:
 
 
         elif self.modelparams['approach'] == 'regression':
+            pred_label = pd.cut(self.predictions, bins=[float("-inf"), 0, 0.3395972, 0.84079594, 2.0124687, 3.5572132, float("inf")], labels = ['X', 'A', 'B', 'C', 'D', 'E'], right=False)
+            actual_labels = pd.cut(self.y_test,  bins=[float("-inf"), 0, 0.3395972, 0.84079594, 2.0124687, 3.5572132, float("inf")], labels = ['X', 'A', 'B', 'C', 'D', 'E'], right=False)
 
             self.txt_block = [
                 str('Method: ' + self.modelparams['algorithm'] + " " + self.modelparams['approach']),
@@ -219,5 +219,7 @@ class ModelStructure:
                 # "Mean squared error: " + str(metrics.mean_squared_error(self.y_test, self.predictions)), '\n',
                 'Almost Correct Predictions Error Rate: ' + str(sum(acper(self.y_test,self.predictions))/len(self.y_test)), '\n',
                 "Pearson correlation coeff.:" + str(scipy.stats.pearsonr(self.y_test,self.predictions)),
-                "Spearman correlation coeff.:" + str(scipy.stats.spearmanr(self.y_test,self.predictions)),
+                "Spearman correlation coeff.:" + str(scipy.stats.spearmanr(self.y_test,self.predictions)), '\n',
+                "CLASSIFICATION REPORT =", 
+                metrics.classification_report(actual_labels,pred_label), '\n',
              ]

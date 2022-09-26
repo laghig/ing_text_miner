@@ -135,7 +135,7 @@ def multiclass_roc_curve(text_clf, model, X, y, classes, data_balancing,  disp):
     plt.ylabel("True Positive Rate")
     plt.title("Multiclass ROC curve", weight='bold')
     plt.legend(loc="lower right")
-    plt.savefig(cwd + file_name) # uncomment to save the plot
+    # plt.savefig(cwd + file_name) # uncomment to save the plot
     plt.show()
 
 def roc_curve_comp(text_clf, X, y, classes, data_balancing):
@@ -212,21 +212,20 @@ def roc_curve_comp(text_clf, X, y, classes, data_balancing):
     plt.ylabel("True Positive Rate")
     plt.title("Multiclass ROC curve", weight='bold')
     plt.legend(loc="lower right")
-    plt.savefig(cwd + file_name) # uncomment to save the plot
+    # plt.savefig(cwd + file_name) # uncomment to save the plot
     plt.show()
 
 
 if __name__ == "__main__":
-    # import interim data as a pandas df
-    df = pd.read_pickle(r"C:\Users\Giorgio\Desktop\ETH\Code\interim_results\cleaned_data.pkl")
+
+    # Test
+    df = pd.read_pickle(cwd + "\interim_results\cleaned_data.pkl")
     classes = ['A', 'B', 'C', 'D', 'E'] # [1, 2, 3]
     disp = 'avg' # 'single' / 'avg'
 
-    # train test split
-    
     X = df['text']
     y = df['ubp_score']
 
     vectorizer = TfidfVectorizer()
     X = vectorizer.fit_transform(X)
-    multiclass_roc_curve(X,y, classes, disp)
+    # multiclass_roc_curve(X,y, classes, disp)
